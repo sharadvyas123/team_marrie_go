@@ -557,6 +557,11 @@ Publish only approved public events to the SSE layer. Support place-scoped and b
 
 ## S-008 — EvidenceGuard and secure media pipeline
 
+> **Transferred to Dhariya.** Use `docs/tasks/Dhariya.md` as the implementation
+> plan. This section remains as the original platform acceptance reference;
+> Sharad owns only shared integration, contracts, storage/infrastructure, and
+> final verification paths.
+
 ### Objective
 
 Accept optional evidence without exposing private data or blocking the durable report lifecycle.
@@ -603,6 +608,11 @@ Approved public derivative
 - Storage cleanup handles abandoned uploads.
 
 ## S-009 — Barrier incidents, access graph, and routing API
+
+> **Transferred to Dhariya.** Use `docs/tasks/Dhariya.md` as the implementation
+> plan. This section remains as the original platform acceptance reference;
+> Sharad owns only shared integration, database, cache/event wiring, and final
+> verification paths.
 
 ### Objective
 
@@ -675,6 +685,11 @@ The adapter can call Valhalla, GraphHopper, OSRM, or another compliant engine. A
 - Route calculations are traced and measured.
 
 ## S-010 — Facility operations, QR workflow, civic API, and webhooks
+
+> **Transferred to Dhariya.** Use `docs/tasks/Dhariya.md` as the implementation
+> plan. This section remains as the original platform acceptance reference;
+> Sharad owns only shared integration, authorization, contracts, workers, and
+> final verification paths.
 
 ### Objective
 

@@ -1,0 +1,32 @@
+{
+  "name": "@accessmap/workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.23.1",
+    "redis": "^6.3.0"
+  },
+  "exports": {
+    ".": "./src/index.mjs",
+    "./idempotency": "./src/idempotency.mjs",
+    "./postgres-idempotency": "./src/postgres-idempotency.mjs",
+    "./dead-letter": "./src/dead-letter.mjs",
+    "./job-runner": "./src/job-runner.mjs",
+    "./main": "./src/main.mjs",
+    "./outbox": "./src/outbox.mjs",
+    "./postgres-outbox": "./src/postgres-outbox.mjs",
+    "./retry-policy": "./src/retry-policy.mjs",
+    "./runtime": "./src/runtime.mjs",
+    "./s006": "./src/s006.mjs",
+    "./evidence": "./src/evidence.mjs",
+    "./webhooks": "./src/webhooks.mjs",
+    "./shutdown": "./src/shutdown.mjs",
+    "./stream-adapter": "./src/stream-adapter.mjs"
+  },
+  "scripts": {
+    "start": "node src/main.mjs",
+    "test": "node --test test/*.mjs",
+    "check": "node --check src/index.mjs && node --test test/import.test.mjs"
+  }
+}

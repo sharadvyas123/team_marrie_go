@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "evidence-upload-intent.v1",
+  "evidenceId": "evidence_sample_1",
+  "uploadUrl": "https://storage.example.test/upload/sample",
+  "expiresAt": "2026-10-17T10:15:00Z",
+  "mediaType": "image/jpeg",
+  "maxBytes": 10485760,
+  "status": "awaiting_upload"
+}

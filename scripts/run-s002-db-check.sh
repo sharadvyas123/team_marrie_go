@@ -22,9 +22,15 @@ fi
 compose() {
   docker compose \
     -p "${PROJECT_NAME}" \
-    -f <(sed "s/127.0.0.1:5432:5432/127.0.0.1:${HOST_PORT}:5432/" "${ROOT_DIR}/infra/docker-compose.yml") \
+    -f <(sed "s/127.0.0.1:\${POSTGRES_HOST_PORT:-5432}:5432/127.0.0.1:${HOST_PORT}:5432/" "${ROOT_DIR}/infra/docker-compose.yml") \
     "$@"
 }
+
+cleanup() {
+  compose down --remove-orphans >/dev/null 2>&1 || true
+}
+
+trap cleanup EXIT
 
 if [[ "${1:-}" != "--yes" ]]; then
   printf 'This will delete only the local Docker database volume for project %s.\n' "${PROJECT_NAME}"
@@ -58,8 +64,8 @@ if [[ "${ready}" != "1" ]]; then
   exit 1
 fi
 
-printf 'Running the migration, repeatable seed, and S-002 boundary checks...\n'
+printf 'Running the migration, repeatable seed, and S-002/S-007 boundary checks...\n'
 TEST_DATABASE_URL="${DATABASE_URL}" \
   node --test supabase/test/schema-seed.integration.test.mjs
 
-printf 'S-002 database check completed successfully.\n'
+printf 'S-002/S-007 database check completed successfully.\n'

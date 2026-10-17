@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-bookworm-slim AS dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/domain/package.json packages/domain/package.json
+COPY packages/events/package.json packages/events/package.json
+COPY packages/validation/package.json packages/validation/package.json
+COPY workers/package.json workers/package.json
+
+RUN npm ci --omit=dev --ignore-scripts
+
+FROM node:20-bookworm-slim AS runtime
+
+ENV NODE_ENV=production \
+    SCHEDULER_INTERVAL_SECONDS=3600
+
+WORKDIR /app
+
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+COPY apps ./apps
+COPY packages ./packages
+COPY workers ./workers
+COPY scripts ./scripts
+COPY infra/scheduler-entrypoint.sh ./infra/scheduler-entrypoint.sh
+
+USER node
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["node", "scripts/process-healthcheck.mjs", "scheduler"]
+
+ENTRYPOINT ["/app/infra/scheduler-entrypoint.sh"]

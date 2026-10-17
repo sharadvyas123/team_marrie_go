@@ -1,0 +1,8 @@
+{
+  "id": "facility_response_sample_1",
+  "placeId": "place_sample_community_centre",
+  "response": "The entrance is step free during opening hours.",
+  "statusValue": "yes",
+  "source": "facility",
+  "createdAt": "2026-10-17T10:00:00Z"
+}

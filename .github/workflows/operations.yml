@@ -1,0 +1,53 @@
+name: Operations checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check operational scripts
+        run: bash scripts/check-operational-scripts.sh
+
+      - name: Run JavaScript and JSON checks
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run contract build
+        run: npm run build
+
+      - name: Run API health check
+        run: npm run check:health
+
+      - name: Validate Compose configuration
+        run: docker compose -f infra/docker-compose.yml config --quiet
+
+      - name: Build API image
+        run: docker build --file Dockerfile.api --tag accessmap-api:ci .
+
+      - name: Build worker image
+        run: docker build --file Dockerfile.worker --tag accessmap-worker:ci .
+
+      - name: Build scheduler image
+        run: docker build --file Dockerfile.scheduler --tag accessmap-scheduler:ci .

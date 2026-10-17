@@ -36,6 +36,22 @@ export class MemoryCache {
     }
   }
 
+  async invalidateByScopes(scopes = []) {
+    const target = new Set(scopes);
+    let removed = 0;
+    for (const key of this.entries.keys()) {
+      if (routeKeyScopes(key).some((scope) => target.has(scope))) {
+        this.entries.delete(key);
+        removed += 1;
+      }
+    }
+    return { removed };
+  }
+
+  async invalidateAffected(message = {}) {
+    return this.invalidateByScopes(message.scopes ?? message.affectedScopes ?? []);
+  }
+
   async stats() {
     return { hits: this.hits, misses: this.misses, degraded: true };
   }
@@ -74,12 +90,40 @@ class RedisCache {
     }
   }
 
+  async invalidateByScopes(scopes = []) {
+    const target = new Set(scopes);
+    let removed = 0;
+    for await (const key of this.client.scanIterator({ MATCH: 'route:v*', COUNT: 100 })) {
+      if (routeKeyScopes(key).some((scope) => target.has(scope))) {
+        removed += await this.client.del(key);
+      }
+    }
+    return { removed };
+  }
+
+  async invalidateAffected(message = {}) {
+    return this.invalidateByScopes(message.scopes ?? message.affectedScopes ?? []);
+  }
+
   async stats() {
     return { hits: this.hits, misses: this.misses, degraded: false };
   }
 
   async close() {
     if (this.client.isOpen) await this.client.quit();
+  }
+}
+
+function routeKeyScopes(key) {
+  if (typeof key !== 'string') return [];
+  const marker = ':s';
+  const start = key.indexOf(marker);
+  const end = key.indexOf(':', start + marker.length);
+  if (start < 0 || end < 0) return [];
+  try {
+    return decodeURIComponent(key.slice(start + marker.length, end)).split(',').filter(Boolean);
+  } catch {
+    return [];
   }
 }
 

@@ -11,10 +11,11 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "workers/*"
+    "workers"
   ],
   "scripts": {
     "api": "node apps/api/src/server.mjs",
+    "worker": "npm run start --workspace @accessmap/workers",
     "dev:api": "node --watch apps/api/src/server.mjs",
     "dev": "npm run dev --workspace @accessmap/web",
     "lint:web": "npm run lint --workspace @accessmap/web",

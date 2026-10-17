@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "evidence.v1",
+  "id": "evidence_sample_1",
+  "mediaType": "image/jpeg",
+  "url": "https://cdn.example.test/evidence/sample.webp",
+  "altText": "A step-free entrance.",
+  "altTextStatus": "available"
+}

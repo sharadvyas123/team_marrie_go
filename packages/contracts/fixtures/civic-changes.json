@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "civic-changes.v1",
+  "items": [],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 0,
+    "hasNext": false
+  }
+}

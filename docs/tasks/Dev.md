@@ -26,6 +26,8 @@ Read these documents in order:
 3. [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md)
 4. [`docs/IMPLEMENTATION_PLAN.md`](../IMPLEMENTATION_PLAN.md)
 5. [`docs/tasks/sharad.md`](sharad.md)
+6. [`docs/tasks/Dhariya.md`](Dhariya.md) when working with `S-008`, `S-009`,
+   or `S-010` backend services.
 
 The product rule that must shape every screen is:
 
@@ -45,18 +47,24 @@ frontend fixture adapters and browser test utilities
 
 You own route pages, React components, browser state, service workers, IndexedDB, map/list interaction, accessibility behavior, and browser tests.
 
-### Sharad owns
+### Sharad owns the remaining backend scope
 
 ```text
-apps/api/**
-workers/**
-packages/domain/**
+apps/api/** except the Dev2- and Dhariya-owned paths in their task plans
+workers/** except workers/evidence/** assigned to Dhariya
+packages/domain/** except packages/domain/src/matching/** for Dev2 and
+packages/domain/src/routing/** for Dhariya
 packages/contracts/**
 packages/events/**
 packages/validation/**
 infra/**
 .github/workflows/**
 ```
+
+Dev2 owns `S-004` and `S-005`; Dhariya owns `S-008`, `S-009`, and `S-010`.
+Read [`docs/tasks/Dhariya.md`](Dhariya.md) before depending on those backend
+services. Dev must not edit any backend implementation path to unblock a
+screen; request a contract or API change through the owning backend plan.
 
 Do not edit backend, migration, worker, event, or root infrastructure files to unblock a screen. Use the contract fixtures or request an API change.
 
