@@ -1,6 +1,6 @@
 # Sharad Backend Handoff
 
-> Prepared from the current workspace inspection on 2026-10-16.
+> Updated from the current FI-S1 integration checkpoint on 2026-10-17.
 > `docs/tasks/sharad.md` remains the source of truth for the ticket board and acceptance criteria.
 
 ## Goal
@@ -19,9 +19,10 @@ The non-negotiable product rule is:
 > Unknown accessibility information must never become a confirmed match or a
 > universal accessibility score.
 
-The current immediate delivery target is the S-001 foundation, followed by the
-ticket dependencies in `docs/tasks/sharad.md`. Do not mark a ticket VERIFIED
-until its acceptance checks have actually run.
+The current immediate delivery target is the Sharad-owned `FI-S1` contract,
+seed-data, and API-shape handshake from `docs/tasks/sharad.md`, followed by
+`FI-S2`–`FI-S4`. Do not mark a ticket VERIFIED until its acceptance checks have
+actually run.
 
 ## State
 
@@ -29,19 +30,28 @@ until its acceptance checks have actually run.
 
 - The repository is on branch `main`.
 - Git HEAD metadata identifies revision
-  `ecbcf06b9a788682fd264388ed74bc5247194f7d`.
+  `aaae774d1e863ab83ecf4274b840b5f60d6133d9`.
 - The workspace contains an npm monorepo with `apps/*` and `packages/*`
   workspaces, plus a declared `workers/*` workspace.
-- A JavaScript Node API foundation exists at `apps/api/src/server.mjs`. It
-  exposes a versioned `GET /health` response using `health.v1` and a
-  `problem.v1` response for unknown resources.
+- A JavaScript Node API exists at `apps/api/src/server.mjs` with versioned health,
+  readiness, session, taxonomy, directory, place detail, matching, reporting,
+  incident, route, evidence, and SSE boundaries.
 - API health and unknown-resource tests exist at
   `apps/api/test/health.test.mjs`.
 - Shared JavaScript packages exist for contracts, domain values, events, and
   validation.
-- The contracts package contains initial schemas and frontend-safe fixtures for
-  health, problems, pagination, places, claims, match profiles, explanations,
-  observations, incidents, routes, and sessions.
+- The contracts package now contains strict JavaScript validation plus 33
+  frontend-safe fixtures for the FI-S1 endpoint envelopes and inner payloads.
+- The canonical synthetic place for handoff fixtures is
+  `13000000-0000-0000-0000-000000000001` (Sample Central Library). The API
+  taxonomy is the seeded 18-feature catalog; `ramp_available` is not a valid
+  seeded feature code.
+- The public route boundary normalizes the internal route result to `route.v1`
+  with `estimatedMinutes`, `uncertainSegments`, a string `recommendation`,
+  freshness, incidents, and the explicit non-guarantee flag.
+- Public incident responses use the API vocabulary `info`, `low`, `medium`,
+  `high`, and `critical`; database values remain translated at the repository
+  boundary.
 - A JavaScript Next.js web shell exists under `apps/web/**`.
 - A local Compose definition exists at `infra/docker-compose.yml` for
   PostgreSQL/PostGIS, Valkey, MinIO, and Mailpit.
@@ -50,32 +60,26 @@ until its acceptance checks have actually run.
 
 ### Incomplete
 
-- The ticket board in `docs/tasks/sharad.md` has not been replaced or updated by
-  this handoff. Ticket status must be reconciled deliberately in the next work
-  session.
-- S-001 acceptance is not verified by this session because no commands were run.
-- The API is still a foundation only; real place search, authentication,
-  authorization, database persistence, observations, claims, workers, routing,
-  and API-connected screens are not implemented.
-- S-002 through S-012 remain to be delivered according to their dependencies and
-  acceptance criteria.
-- The web shell is not connected to real place data or the backend API.
-- No database migrations, seed data, row-level security policies, Redis/Valkey
-  queues, worker consumers, EvidenceGuard pipeline, SSE stream, routing adapter,
-  facility APIs, civic API, webhook delivery, deployment setup, backup/restore
-  rehearsal, or production smoke test were found in the inspected workspace.
-- Compose services were not started during the documented setup and were not
-  started in this session.
+- `FI-S1` still needs a live PostgreSQL/PostGIS migration-and-seed smoke check;
+  the committed fixtures and serializers are aligned, but service-backed
+  responses were not available in this container.
+- `FI-S2` auth/session issuance, profile RLS verification, and the BFF auth
+  forwarding decision remain pending.
+- `FI-S3` observation/evidence provider readiness and `FI-S4` final route,
+  incident, and multi-replica SSE verification remain pending.
+- The web client is intentionally unchanged in this Sharad handoff. Priyanka
+  should consume the documented contracts through the BFF work in her task plan.
+- Compose services were not started during this checkpoint.
 - No production provider credentials or deployment environment is configured.
 
 ### Blocked or unverified
 
-- Current uncommitted versus committed file state is unknown. The user explicitly
-  prohibited running commands, so `git status` and `git diff` were not run.
-  Observed paths below therefore cannot be classified as this session's changes
-  or unrelated pre-existing work.
-- Current test, lint, typecheck, build, and runtime behavior is unverified in
-  this session.
+- The workspace already contained unrelated changes in
+  `packages/contracts/fixtures/match-explanation.json` and
+  `apps/web/test/match-client.test.mjs`; this checkpoint did not modify either
+  file.
+- Docker and `psql` are not installed in this container, so database, Valkey,
+  migration, seed, outbox, and worker checks remain skipped.
 - There is no TypeScript typecheck command; the repository is intentionally
   JavaScript-only. Adding TypeScript or a compiler requires an explicit stack
   decision rather than an implicit change.
@@ -191,10 +195,12 @@ run in this handoff session.
 ### Git evidence
 
 - Branch and revision were read from Git metadata: `main` at
-  `ecbcf06b9a788682fd264388ed74bc5247194f7d`.
-- **Status/diff not run** because the user explicitly prohibited commands.
-- Consequently, no file is described as committed, uncommitted, merged, or
-  belonging to this session.
+  `aaae774d1e863ab83ecf4274b840b5f60d6133d9`.
+- `git status --short` was run before implementation. Pre-existing changes in
+  `packages/contracts/fixtures/match-explanation.json` and
+  `apps/web/test/match-client.test.mjs` were preserved.
+- This checkpoint changed only Sharad-owned backend, contract, fixture, test,
+  script, and handoff paths.
 
 ## Next step
 
@@ -205,8 +211,118 @@ After approval of this handoff, run the repository-level Git evidence checks fro
 2. `git diff --stat`
 3. `git diff -- <relevant paths>`
 
-Then reconcile the observed implementation against S-001 in
-`docs/tasks/sharad.md`, keeping unrelated local work separate. The first
-implementation action should be to choose or create the S-001 ticket
-branch/worktree and verify the documented foundation commands before starting
-S-002 migrations.
+Then reconcile the observed implementation against `FI-S1` in
+`docs/tasks/sharad.md`, keeping unrelated local work separate. The next
+implementation action should be to choose or create the next Sharad
+ticket branch/worktree and verify the documented foundation commands before
+starting FI-S2 or the live database checks.
+
+## FI-S1 integration checkpoint
+
+### Ticket
+
+`FI-S1` — Contract, seed-data, and API-shape handshake.
+
+### Delivered
+
+- Added strict contract validation in `packages/contracts/src/index.mjs` and
+  changed `scripts/build.mjs` to validate types, enums, nested objects, refs,
+  and additional properties rather than only checking required keys.
+- Added endpoint fixtures for readiness, taxonomy, search/detail, claims,
+  incidents, access graphs, matches, profiles, observations, routes, incident
+  events, and SSE payloads. All fixture identifiers use seeded IDs and feature
+  codes.
+- Selected the canonical seeded handoff place as
+  `13000000-0000-0000-0000-000000000001` / Sample Central Library.
+- Normalized the public route response at the API boundary to `route.v1` and a
+  frontend-safe string recommendation with minutes and explicit uncertainty.
+- Added response schema versions for profile, observation, incident, and
+  observation list/sync responses.
+- Redacted internal incident contributor fields from repository-backed public
+  place/detail/list responses while retaining feature codes for internal match
+  and routing snapshots.
+- Added `packages/contracts/test/contracts.test.mjs` and strengthened the API
+  integration assertions for route and SSE payload versions.
+
+### Contract/version
+
+- Contract package: `@accessmap/contracts` `v1`.
+- Endpoint versions: `ready.v1`, `session.v1`, `categories.v1`, `features.v1`,
+  `place-search.v1`, `place-detail.v1`, `claims.v1`, `incidents.v1`,
+  `access-graph.v1`, `match-results.v1`, `profile.v1`, `observation.v1`,
+  `observation-list.v1`, `observation-sync.v1`, `route.v1`,
+  `incident-event.v1`, and `stream-event.v1`.
+- Public incident severity vocabulary: `info`, `low`, `medium`, `high`,
+  `critical`. The repository translates database `informational`, `warning`,
+  and `major` values to this API vocabulary.
+- Database migration: none.
+
+### Run locally
+
+```text
+npm run build
+npm run lint
+npm test
+npm run check:health
+```
+
+Recorded results for this checkpoint: `npm run check` passed (`111` tests
+passed, `4` service-dependent tests skipped), `npm run check:health` passed,
+and `git diff --check` passed. The final standalone `npm run build` also
+validated all 33 fixtures and completed the web production build.
+
+For a seeded API, apply `supabase/migrations/001_*.sql` through
+`008_*.sql`, then `supabase/seed/001_demo_data.sql`, set `DATABASE_URL`, and
+run `npm run api`. The API listens on `http://127.0.0.1:3001` by default; the
+server-side web BFF should use `ACCESSMAP_API_URL=http://127.0.0.1:3001` and
+must not expose that value through `NEXT_PUBLIC_*` configuration.
+
+### Fixtures/accounts
+
+- Canonical fixture place: `13000000-0000-0000-0000-000000000001`.
+- Canonical fixture feature examples: `step_free_entrance`,
+  `accessible_toilet`, `working_lift`, and the remaining 15 entries in
+  `features.json`.
+- All fixture records are synthetic and contain no credentials, private storage
+  keys, contributor identity, or moderation notes.
+- The API still verifies local HMAC bearer tokens but does not issue them.
+
+### Known limitations
+
+- PostgreSQL/PostGIS, Valkey, migration/seed, outbox, and worker checks were
+  skipped because Docker and `psql` are unavailable in this container.
+- Profile RLS context, token issuance/BFF session translation, evidence attach
+  sequencing, and provider availability are FI-S2/FI-S3 work.
+- The route engine remains the seeded local graph unless an external routing
+  provider is injected. SSE remains process-local and should be treated as a
+  refetch hint.
+
+### Dev action required
+
+- Consume the endpoint fixtures and versions above; do not use the old
+  `place_sample_community_centre` or `ramp_available` IDs.
+- Build the same-origin BFF and public directory against `/api/places` and
+  `/api/places/:placeId`; do not call port 3001 directly from browser code.
+- Treat `route.v1` recommendations, claims, and reports as uncertainty-aware;
+  a pending observation is not a public claim.
+
+### Frontend integration checkpoint
+
+The current workspace also contains the first frontend integration slice:
+
+- `apps/web/lib/api/` provides the server client, browser client, typed
+  `ApiError`, and contract-to-view-model normalizers.
+- `apps/web/app/api/accessmap/[...path]/route.js` is the same-origin GET-only
+  BFF. It forwards `Accept`, trace ID, and an explicitly approved bearer
+  header, and does not forward cookies or server secrets.
+- Search and place detail consume `/api/places`, `/api/categories`,
+  `/api/features`, and `/api/places/:placeId`; the UI distinguishes empty,
+  unavailable, not-found, unknown, sample, and published states.
+- Frontend transport/BFF coverage is in `apps/web/test/api-client.test.mjs`
+  and `apps/web/test/bff-route.test.mjs`.
+
+The web is configured with the server-only variable
+`ACCESSMAP_API_URL=http://127.0.0.1:3001`. Do not add this value to a
+`NEXT_PUBLIC_*` variable or call port 3001 from browser components. The live
+frontend currently renders the intended recovery state until the API has a
+PostgreSQL/PostGIS repository with migrations and seed data.

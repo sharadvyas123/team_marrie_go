@@ -1,0 +1,40 @@
+{
+  "graphVersion": 1,
+  "nodes": [
+    {
+      "id": "17000000-0000-0000-0000-000000000001",
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "type": "entrance",
+      "label": "Library main entrance",
+      "floor": "Ground",
+      "status": "active",
+      "latitude": 12.9716,
+      "longitude": 77.5946
+    },
+    {
+      "id": "17000000-0000-0000-0000-000000000002",
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "type": "lift",
+      "label": "Library lift",
+      "floor": "Ground",
+      "status": "active",
+      "latitude": 12.97162,
+      "longitude": 77.59465
+    }
+  ],
+  "edges": [
+    {
+      "id": "18000000-0000-0000-0000-000000000001",
+      "fromNodeId": "17000000-0000-0000-0000-000000000001",
+      "toNodeId": "17000000-0000-0000-0000-000000000002",
+      "surfaceType": "paved",
+      "widthMeters": 1.8,
+      "slopePercent": 1,
+      "stairs": false,
+      "stepFree": true,
+      "lastObservedAt": "2026-10-01T09:00:00Z",
+      "status": "active",
+      "geometry": { "type": "LineString", "coordinates": [[77.5946, 12.9716], [77.59465, 12.97162]] }
+    }
+  ]
+}

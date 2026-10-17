@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "categories.v1",
+  "items": [
+    { "code": "library", "name": "Library" },
+    { "code": "healthcare", "name": "Healthcare" },
+    { "code": "community_center", "name": "Community center" }
+  ]
+}

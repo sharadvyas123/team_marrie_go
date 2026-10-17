@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "features.v1",
+  "items": [
+    { "code": "step_free_entrance", "category": "entrance", "label": "Step-free entrance", "description": "An entrance without steps on the usable approach.", "inputType": "boolean", "freshnessDays": 365 },
+    { "code": "accessible_toilet", "category": "toilet", "label": "Accessible toilet", "description": "A toilet with the required accessible space and fittings.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "working_lift", "category": "building", "label": "Working lift", "description": "A lift that is currently available for the relevant route.", "inputType": "boolean", "freshnessDays": 60 },
+    { "code": "stairs", "category": "building", "label": "Stairs present", "description": "Stairs on the relevant route or entrance.", "inputType": "boolean", "freshnessDays": 365 },
+    { "code": "wide_door", "category": "entrance", "label": "Wide door", "description": "A door with a usable clear opening width.", "inputType": "measurement", "freshnessDays": 365 },
+    { "code": "curb_ramp", "category": "outdoor", "label": "Curb ramp", "description": "A usable ramp at the relevant road crossing.", "inputType": "boolean", "freshnessDays": 90 },
+    { "code": "path_width", "category": "outdoor", "label": "Path width", "description": "The measured usable width of an access path.", "inputType": "measurement", "freshnessDays": 90 },
+    { "code": "quiet_space", "category": "sensory", "label": "Quiet space", "description": "A designated lower-stimulation space.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "accessible_stop", "category": "transport", "label": "Accessible stop", "description": "A stop with step-free boarding support.", "inputType": "boolean", "freshnessDays": 30 },
+    { "code": "accessible_parking", "category": "outdoor", "label": "Accessible parking or drop-off", "description": "A suitable accessible parking bay or drop-off point.", "inputType": "boolean", "freshnessDays": 90 },
+    { "code": "tactile_paving", "category": "outdoor", "label": "Tactile paving", "description": "Tactile guidance supports the approach and entrance.", "inputType": "boolean", "freshnessDays": 365 },
+    { "code": "audio_directions", "category": "communication", "label": "Audio directions or announcements", "description": "Audio information supports navigation and important updates.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "high_contrast_signage", "category": "communication", "label": "High-contrast signage", "description": "Signs use clear contrast and readable visual information.", "inputType": "boolean", "freshnessDays": 365 },
+    { "code": "visual_alerts", "category": "communication", "label": "Visual alerts and displays", "description": "Important announcements are available through visual alerts or displays.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "hearing_loop", "category": "communication", "label": "Hearing loop", "description": "An assistive listening system is available where needed.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "captioned_information", "category": "communication", "label": "Captioned or text assistance", "description": "Service information includes text alternatives.", "inputType": "boolean", "freshnessDays": 180 },
+    { "code": "clear_signage", "category": "cognitive", "label": "Clear, predictable signage", "description": "The route and steps to use the service are clearly signposted.", "inputType": "boolean", "freshnessDays": 365 },
+    { "code": "seating_available", "category": "building", "label": "Seating along the route", "description": "There is somewhere to rest during a visit or while waiting.", "inputType": "boolean", "freshnessDays": 180 }
+  ]
+}

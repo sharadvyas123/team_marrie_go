@@ -22,7 +22,9 @@ function mapPlace(row) {
       : Number(row.distance_meters),
     sampleData: Boolean(row.is_sample),
     claimSummary: row.claim_summary ?? [],
-    activeIncidents: row.active_incidents ?? []
+    activeIncidents: Array.isArray(row.active_incidents)
+      ? row.active_incidents.map(mapIncidentSummary)
+      : []
   };
 }
 
@@ -53,23 +55,32 @@ function mapIncident(row) {
     featureId: row.feature_id ?? null,
     featureCode: row.feature_code ?? null,
     type: row.incident_type,
-    incidentType: row.incident_type,
     severity: fromDatabaseSeverity(row.severity),
     status: row.status,
     explanation: row.description ?? null,
-    description: row.description ?? null,
     source: row.source_type ?? 'community',
     startsAt: row.starts_at,
     expectedExpiryAt: row.expected_expiry_at ?? null,
     reviewAt: row.review_at,
     resolvedAt: row.resolved_at ?? null,
     observedAt: row.starts_at,
-    reportedBy: row.reported_by ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    latitude: row.latitude === null ? null : Number(row.latitude),
-    longitude: row.longitude === null ? null : Number(row.longitude)
+    affectedScopes: []
   };
+}
+
+function mapIncidentSummary(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    severity: fromDatabaseSeverity(row.severity),
+    status: row.status,
+    reviewAt: row.reviewAt ?? null
+  };
+}
+
+function mapPublicIncident(record) {
+  const { featureCode: _featureCode, ...publicRecord } = record;
+  return publicRecord;
 }
 
 function mapFacilityClaim(row) {
@@ -289,8 +300,8 @@ export class SqlRepository {
              'reviewAt', b.review_at
            ) ORDER BY b.review_at)
            FROM barrier_events b
-          WHERE b.place_id = p.id
-            AND b.status IN ('reported', 'validated', 'published', 'disputed')
+           WHERE b.place_id = p.id
+             AND b.status IN ('published', 'disputed')
          ), '[]'::json) AS active_incidents
        FROM places p
        JOIN place_categories c ON c.id = p.category_id
@@ -320,7 +331,16 @@ export class SqlRepository {
     if (!result.rows[0]) return null;
     const row = result.rows[0];
     return {
-      ...mapPlace(row),
+      id: row.id,
+      name: row.name,
+      category: row.category_code,
+      categoryLabel: row.category_label,
+      address: row.address,
+      city: row.city,
+      description: row.description ?? null,
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      sampleData: Boolean(row.is_sample),
       postalCode: row.postal_code,
       phone: row.phone,
       website: row.website,
@@ -349,7 +369,7 @@ export class SqlRepository {
     return result.rows.map(mapClaim);
   }
 
-  async listIncidents({ placeId = null, bbox = null, placeIds = [], nodeIds = [], publicOnly = true, activeOnly = false, page, pageSize } = {}) {
+  async listIncidents({ placeId = null, bbox = null, placeIds = [], nodeIds = [], publicOnly = true, activeOnly = false, includeInternal = false, page, pageSize } = {}) {
     const values = [];
     const conditions = [publicOnly
       ? "b.status IN ('published', 'disputed', 'resolved', 'archived')"
@@ -377,7 +397,8 @@ export class SqlRepository {
         ORDER BY b.starts_at DESC, b.id ASC${limit === null ? '' : ` LIMIT ${add(limit)} OFFSET ${add(offset)}`}`,
       values
     ));
-    const items = result.rows.map(mapIncident);
+    const mappedItems = result.rows.map(mapIncident);
+    const items = includeInternal ? mappedItems : mappedItems.map(mapPublicIncident);
     if (page === undefined) return items;
     const count = await withDatabase(this.pool, (client) => client.query(
       `SELECT count(*)::integer AS total FROM barrier_events b WHERE ${where}`,
@@ -1154,7 +1175,7 @@ export class SqlRepository {
 
   async claimsForMatch(placeId) {
     const claims = await this.listClaims(placeId);
-    const incidents = await this.listIncidents({ placeId, activeOnly: true });
+    const incidents = await this.listIncidents({ placeId, activeOnly: true, includeInternal: true });
     return {
       claimsVersion: claims.reduce((version, claim) => Math.max(version, claim.claimsVersion), 0),
       claims,

@@ -18,5 +18,6 @@ const toneByStatus = {
 
 export default function StatusBadge({ status, children }) {
   const tone = toneByStatus[status] ?? 'status-neutral';
-  return <span className={`status-badge ${tone}`}><span aria-hidden="true" className="status-dot" />{children ?? status.replaceAll('_', ' ')}</span>;
+  const fallback = status ? String(status).replaceAll('_', ' ') : 'Unknown';
+  return <span className={`status-badge ${tone}`}><span aria-hidden="true" className="status-dot" />{children ?? fallback}</span>;
 }

@@ -1,6 +1,16 @@
 const string = (extra = {}) => ({ type: 'string', ...extra });
 const number = (extra = {}) => ({ type: 'number', ...extra });
 const boolean = (extra = {}) => ({ type: 'boolean', ...extra });
+const nullableString = () => ({ type: ['string', 'null'] });
+const nullableNumber = () => ({ type: ['number', 'null'] });
+const arrayOf = (items) => ({ type: 'array', items });
+const objectOf = (properties, required = [], extra = {}) => ({
+  type: 'object',
+  properties,
+  required,
+  additionalProperties: false,
+  ...extra
+});
 
 export const contractVersion = 'v1';
 
@@ -15,6 +25,17 @@ export const schemas = Object.freeze({
       status: string({ enum: ['ok', 'degraded'] }),
       version: string(),
       checks: { type: 'object' }
+    },
+    additionalProperties: false
+  },
+  readyResponse: {
+    $id: 'accessmap.ready.v1',
+    type: 'object',
+    required: ['schemaVersion', 'status', 'checks'],
+    properties: {
+      schemaVersion: string({ const: 'ready.v1' }),
+      status: string({ enum: ['ok', 'degraded'] }),
+      checks: { type: 'object', additionalProperties: { type: 'string' } }
     },
     additionalProperties: false
   },
@@ -56,13 +77,35 @@ export const schemas = Object.freeze({
       categoryLabel: string(),
       address: string(),
       city: string(),
-      description: string(),
+      description: nullableString(),
       latitude: number({ minimum: -90, maximum: 90 }),
       longitude: number({ minimum: -180, maximum: 180 }),
       distanceMeters: number({ minimum: 0 }),
       sampleData: boolean(),
-      claimSummary: { type: 'array' },
-      activeIncidents: { type: 'array' }
+      claimSummary: arrayOf({
+        type: 'object',
+        required: ['featureCode', 'status', 'summaryValue', 'freshnessState'],
+        properties: {
+          featureCode: string(),
+          status: string(),
+          summaryValue: string(),
+          observedAt: nullableString(),
+          freshnessState: string()
+        },
+        additionalProperties: false
+      }),
+      activeIncidents: arrayOf({
+        type: 'object',
+        required: ['id', 'type', 'severity', 'status', 'reviewAt'],
+        properties: {
+          id: string(),
+          type: string(),
+          severity: string({ enum: ['info', 'low', 'medium', 'high', 'critical'] }),
+          status: string({ enum: ['reported', 'validated', 'published', 'disputed', 'resolved', 'archived'] }),
+          reviewAt: nullableString()
+        },
+        additionalProperties: false
+      })
     },
     additionalProperties: false
   },
@@ -72,7 +115,7 @@ export const schemas = Object.freeze({
     required: ['schemaVersion', 'items', 'pagination'],
     properties: {
       schemaVersion: string({ const: 'place-search.v1' }),
-      items: { type: 'array' },
+      items: arrayOf({ $ref: 'accessmap.place-summary.v1' }),
       pagination: { $ref: 'accessmap.pagination.v1' }
     },
     additionalProperties: false
@@ -86,10 +129,135 @@ export const schemas = Object.freeze({
       id: string(),
       name: string(),
       category: string(),
+      categoryLabel: string(),
       address: string(),
-      claims: { type: 'array' },
-      incidents: { type: 'array' },
-      accessGraph: { type: 'object' }
+      city: string(),
+      description: nullableString(),
+      postalCode: nullableString(),
+      latitude: number({ minimum: -90, maximum: 90 }),
+      longitude: number({ minimum: -180, maximum: 180 }),
+      phone: nullableString(),
+      website: nullableString(),
+      openingHours: { type: ['object', 'null'] },
+      source: string(),
+      status: string({ enum: ['active', 'temporarily_closed'] }),
+      sampleData: boolean(),
+      claims: arrayOf({ $ref: 'accessmap.accessibility-claim.v1' }),
+      incidents: arrayOf({ $ref: 'accessmap.incident.v1' }),
+      accessGraph: { $ref: 'accessmap.access-graph.v1' }
+    },
+    additionalProperties: false
+  },
+  accessGraph: {
+    $id: 'accessmap.access-graph.v1',
+    type: 'object',
+    required: ['graphVersion', 'nodes', 'edges'],
+    properties: {
+      graphVersion: number({ minimum: 0 }),
+      nodes: arrayOf(objectOf({
+        id: string(),
+        placeId: string(),
+        type: string(),
+        label: string(),
+        floor: nullableString(),
+        status: string(),
+        latitude: number({ minimum: -90, maximum: 90 }),
+        longitude: number({ minimum: -180, maximum: 180 })
+      }, ['id', 'placeId', 'type', 'label', 'floor', 'status', 'latitude', 'longitude'])),
+      edges: arrayOf(objectOf({
+        id: string(),
+        fromNodeId: string(),
+        toNodeId: string(),
+        surfaceType: nullableString(),
+        widthMeters: nullableNumber(),
+        slopePercent: nullableNumber(),
+        stairs: { type: ['boolean', 'null'] },
+        stepFree: { type: ['boolean', 'null'] },
+        lastObservedAt: nullableString(),
+        status: string(),
+        geometry: { type: ['object', 'null'] }
+      }, ['id', 'fromNodeId', 'toNodeId', 'surfaceType', 'widthMeters', 'slopePercent', 'stairs', 'stepFree', 'lastObservedAt', 'status', 'geometry']))
+    },
+    additionalProperties: false
+  },
+  claimsResponse: {
+    $id: 'accessmap.claims.v1',
+    type: 'object',
+    required: ['schemaVersion', 'items'],
+    properties: {
+      schemaVersion: string({ const: 'claims.v1' }),
+      items: arrayOf({ $ref: 'accessmap.accessibility-claim.v1' })
+    },
+    additionalProperties: false
+  },
+  incidentsResponse: {
+    $id: 'accessmap.incidents.v1',
+    type: 'object',
+    required: ['schemaVersion', 'items'],
+    properties: {
+      schemaVersion: string({ const: 'incidents.v1' }),
+      items: arrayOf({ $ref: 'accessmap.incident.v1' }),
+      pagination: { $ref: 'accessmap.pagination.v1' }
+    },
+    additionalProperties: false
+  },
+  streamReady: {
+    $id: 'accessmap.stream-ready.v1',
+    type: 'object',
+    required: ['schemaVersion', 'traceId'],
+    properties: {
+      schemaVersion: string({ const: 'stream.v1' }),
+      traceId: string()
+    },
+    additionalProperties: false
+  },
+  streamEvent: {
+    $id: 'accessmap.stream-event.v1',
+    type: 'object',
+    required: ['schemaVersion', 'eventType'],
+    properties: {
+      schemaVersion: string({ const: 'stream-event.v1' }),
+      eventType: string(),
+      placeId: nullableString(),
+      incidentId: nullableString(),
+      accessNodeId: nullableString(),
+      accessEdgeId: nullableString(),
+      featureId: nullableString(),
+      featureCode: nullableString(),
+      type: nullableString(),
+      severity: string({ enum: ['info', 'low', 'medium', 'high', 'critical'] }),
+      source: nullableString(),
+      startsAt: nullableString(),
+      reviewAt: nullableString(),
+      expectedExpiryAt: nullableString(),
+      resolvedAt: nullableString(),
+      routeId: nullableString(),
+      claimsVersion: nullableNumber(),
+      graphVersion: nullableNumber(),
+      occurredAt: nullableString(),
+      status: nullableString(),
+      incident: { type: 'object' },
+      routeInvalidation: { type: 'object' }
+    },
+    additionalProperties: false
+  },
+  incidentEvent: {
+    $id: 'accessmap.incident-event.v1',
+    type: 'object',
+    required: ['schemaVersion', 'eventType', 'occurredAt', 'incidentId', 'placeId', 'status', 'severity', 'type', 'incident'],
+    properties: {
+      schemaVersion: string({ const: 'incident-event.v1' }),
+      eventType: string(),
+      occurredAt: string(),
+      incidentId: string(),
+      placeId: string(),
+      status: string(),
+      severity: string({ enum: ['info', 'low', 'medium', 'high', 'critical'] }),
+      type: string(),
+      observedAt: nullableString(),
+      expectedExpiryAt: nullableString(),
+      incident: { $ref: 'accessmap.incident.v1' },
+      routeInvalidation: { type: 'object' }
     },
     additionalProperties: false
   },
@@ -97,14 +265,27 @@ export const schemas = Object.freeze({
     $id: 'accessmap.categories.v1',
     type: 'object',
     required: ['schemaVersion', 'items'],
-    properties: { schemaVersion: string({ const: 'categories.v1' }), items: { type: 'array' } },
+    properties: {
+      schemaVersion: string({ const: 'categories.v1' }),
+      items: arrayOf(objectOf({ code: string(), name: string() }, ['code', 'name']))
+    },
     additionalProperties: false
   },
   featuresResponse: {
     $id: 'accessmap.features.v1',
     type: 'object',
     required: ['schemaVersion', 'items'],
-    properties: { schemaVersion: string({ const: 'features.v1' }), items: { type: 'array' } },
+    properties: {
+      schemaVersion: string({ const: 'features.v1' }),
+      items: arrayOf(objectOf({
+        code: string(),
+        category: string(),
+        label: string(),
+        description: string(),
+        inputType: string(),
+        freshnessDays: number({ minimum: 1 })
+      }, ['code', 'category', 'label', 'description', 'inputType', 'freshnessDays']))
+    },
     additionalProperties: false
   },
   accessibilityClaim: {
@@ -112,12 +293,19 @@ export const schemas = Object.freeze({
     type: 'object',
     required: ['featureCode', 'status', 'source', 'observedAt'],
     properties: {
+      id: string(),
+      placeId: string(),
       featureCode: string(),
+      featureLabel: string(),
       status: string(),
+      summaryValue: string(),
       source: string(),
-      observedAt: string(),
+      observedAt: nullableString(),
+      freshnessState: string(),
       supportingCount: number({ minimum: 0 }),
-      disputingCount: number({ minimum: 0 })
+      disputingCount: number({ minimum: 0 }),
+      claimsVersion: number({ minimum: 0 }),
+      calculationVersion: number({ minimum: 1 })
     },
     additionalProperties: false
   },
@@ -141,18 +329,78 @@ export const schemas = Object.freeze({
     },
     additionalProperties: false
   },
+  matchSummary: {
+    $id: 'accessmap.match-summary.v1',
+    type: 'object',
+    required: ['total', 'confirmed', 'knownBarriers', 'partial', 'unknown'],
+    properties: {
+      total: number({ minimum: 0 }),
+      confirmed: number({ minimum: 0 }),
+      knownBarriers: number({ minimum: 0 }),
+      partial: number({ minimum: 0 }),
+      unknown: number({ minimum: 0 })
+    },
+    additionalProperties: false
+  },
+  matchPreferredSummary: {
+    $id: 'accessmap.match-preferred-summary.v1',
+    type: 'object',
+    required: ['total', 'confirmed', 'partial', 'unknown'],
+    properties: {
+      total: number({ minimum: 0 }),
+      confirmed: number({ minimum: 0 }),
+      partial: number({ minimum: 0 }),
+      unknown: number({ minimum: 0 })
+    },
+    additionalProperties: false
+  },
+  matchItem: {
+    $id: 'accessmap.match-item.v1',
+    type: 'object',
+    required: ['featureCode', 'level', 'result', 'reason', 'claimStatus'],
+    properties: {
+      featureCode: string(),
+      level: string({ enum: ['required', 'preferred', 'avoid'] }),
+      result: string({ enum: ['confirmed', 'partial', 'barrier', 'unknown', 'warning', 'clear'] }),
+      reason: string(),
+      claimStatus: string(),
+      source: string(),
+      observedAt: string()
+    },
+    additionalProperties: false
+  },
+  matchResults: {
+    $id: 'accessmap.match-results.v1',
+    type: 'object',
+    required: ['schemaVersion', 'items'],
+    properties: {
+      schemaVersion: string({ const: 'match-results.v1' }),
+      items: arrayOf(objectOf({
+        placeId: string(),
+        decision: string({ enum: ['meets_known_requirements', 'partial', 'needs_more_information', 'known_barrier', 'no_profile'] }),
+        required: { $ref: 'accessmap.match-summary.v1' },
+        preferred: { $ref: 'accessmap.match-preferred-summary.v1' },
+        avoidanceWarnings: arrayOf({ $ref: 'accessmap.match-item.v1' }),
+        items: arrayOf({ $ref: 'accessmap.match-item.v1' }),
+        claimsVersion: number({ minimum: 0 }),
+        calculationVersion: number({ minimum: 1 })
+      }, ['placeId', 'decision', 'required', 'preferred', 'avoidanceWarnings', 'items']))
+    },
+    additionalProperties: false
+  },
   matchExplanation: {
     $id: 'accessmap.match-explanation.v1',
     type: 'object',
       required: ['decision', 'required', 'preferred', 'avoidanceWarnings', 'items'],
     properties: {
+      schemaVersion: string({ const: 'match-explanation.v1' }),
       decision: string({
         enum: ['meets_known_requirements', 'partial', 'needs_more_information', 'known_barrier', 'no_profile']
       }),
-      required: { type: 'object' },
-      preferred: { type: 'object' },
-      avoidanceWarnings: { type: 'array' },
-      items: { type: 'array' },
+      required: { $ref: 'accessmap.match-summary.v1' },
+      preferred: { $ref: 'accessmap.match-preferred-summary.v1' },
+      avoidanceWarnings: arrayOf({ $ref: 'accessmap.match-item.v1' }),
+      items: arrayOf({ $ref: 'accessmap.match-item.v1' }),
       claimsVersion: number({ minimum: 0 }),
       calculationVersion: number({ minimum: 1 })
     },
@@ -161,18 +409,20 @@ export const schemas = Object.freeze({
   observation: {
     $id: 'accessmap.observation.v1',
     type: 'object',
-      required: ['id', 'placeId', 'featureCode', 'value', 'observedAt', 'status'],
+    required: ['id', 'placeId', 'featureCode', 'value', 'observedAt', 'status'],
     properties: {
+      schemaVersion: string({ const: 'observation.v1' }),
       id: string(),
       placeId: string(),
       featureCode: string(),
-      value: string(),
-      details: string(),
-      measuredValue: { type: 'object' },
+      value: string({ enum: ['yes', 'no', 'partial', 'temporarily_unavailable', 'unknown'] }),
+      details: nullableString(),
+      measuredValue: { type: ['object', 'null'] },
       observedAt: string(),
+      submittedAt: string(),
       status: string({ enum: ['pending', 'approved', 'rejected', 'changes_requested', 'synced'] }),
       visibility: string(),
-      clientRequestId: string(),
+      clientRequestId: nullableString(),
       duplicate: boolean(),
       synced: boolean(),
       sampleData: boolean(),
@@ -199,15 +449,47 @@ export const schemas = Object.freeze({
   observationSync: {
     $id: 'accessmap.observation-sync.v1',
     type: 'object',
-    required: ['items'],
-    properties: { items: { type: 'array' } },
+    required: ['schemaVersion', 'items'],
+    properties: {
+      schemaVersion: string({ const: 'observation-sync.v1' }),
+      items: arrayOf({ $ref: 'accessmap.observation.v1' })
+    },
     additionalProperties: false
   },
   observationList: {
     $id: 'accessmap.observation-list.v1',
     type: 'object',
-    required: ['items', 'pagination'],
-    properties: { items: { type: 'array' }, pagination: { $ref: 'accessmap.pagination.v1' } },
+    required: ['schemaVersion', 'items', 'pagination'],
+    properties: {
+      schemaVersion: string({ const: 'observation-list.v1' }),
+      items: arrayOf({ $ref: 'accessmap.observation.v1' }),
+      pagination: { $ref: 'accessmap.pagination.v1' }
+    },
+    additionalProperties: false
+  },
+  observationResponse: {
+    $id: 'accessmap.observation-response.v1',
+    type: 'object',
+    required: ['schemaVersion', 'id', 'placeId', 'featureCode', 'value', 'observedAt', 'status'],
+    properties: {
+      schemaVersion: string({ const: 'observation.v1' }),
+      id: string(),
+      placeId: string(),
+      featureCode: string(),
+      value: string({ enum: ['yes', 'no', 'partial', 'temporarily_unavailable', 'unknown'] }),
+      details: nullableString(),
+      measuredValue: { type: ['object', 'null'] },
+      observedAt: string(),
+      submittedAt: string(),
+      status: string({ enum: ['pending', 'approved', 'rejected', 'changes_requested', 'synced'] }),
+      visibility: string(),
+      clientRequestId: nullableString(),
+      duplicate: boolean(),
+      synced: boolean(),
+      sampleData: boolean(),
+      evidence: arrayOf({ type: 'object' }),
+      amendments: arrayOf({ type: 'object' })
+    },
     additionalProperties: false
   },
   moderationItem: {
@@ -249,18 +531,18 @@ export const schemas = Object.freeze({
       id: string(),
       placeId: string(),
       type: string(),
-      severity: string({ enum: ['informational', 'warning', 'major', 'critical'] }),
+      severity: string({ enum: ['info', 'low', 'medium', 'high', 'critical'] }),
       status: string({ enum: ['reported', 'validated', 'published', 'disputed', 'resolved', 'archived'] }),
-      accessNodeId: string(),
-      accessEdgeId: string(),
-      featureId: string(),
+      accessNodeId: nullableString(),
+      accessEdgeId: nullableString(),
+      featureId: nullableString(),
       startsAt: string(),
-      reviewAt: string(),
-      description: string(),
-      resolvedAt: string(),
-      observedAt: string(),
+      reviewAt: nullableString(),
+      explanation: nullableString(),
+      resolvedAt: nullableString(),
+      observedAt: nullableString(),
       source: string(),
-      affectedScopes: { type: 'array' }
+      affectedScopes: arrayOf(string())
     },
     additionalProperties: false
   },
@@ -272,8 +554,10 @@ export const schemas = Object.freeze({
       origin: { type: 'object' },
       destination: { type: 'object' },
       constraints: { type: 'object' },
-      alternatives: number({ minimum: 1, maximum: 3 }),
-      timeoutMs: number({ minimum: 100, maximum: 15000 })
+      maxAlternatives: number({ minimum: 1, maximum: 10 }),
+      timeoutMs: number({ minimum: 100, maximum: 120000 }),
+      mode: string({ enum: ['walking', 'wheelchair', 'mobility_scooter', 'transit'] }),
+      locale: string()
     },
     additionalProperties: false
   },
@@ -282,15 +566,19 @@ export const schemas = Object.freeze({
     type: 'object',
     required: ['id', 'distanceMeters', 'estimatedMinutes', 'uncertainSegments', 'recommendation'],
     properties: {
+      schemaVersion: string({ const: 'route.v1' }),
       id: string(),
       distanceMeters: number({ minimum: 0 }),
       estimatedMinutes: number({ minimum: 0 }),
-      uncertainSegments: { type: 'array' },
+      uncertainSegments: arrayOf(string()),
+      staleSegments: arrayOf(string()),
       recommendation: string(),
       constraints: { type: 'object' },
       freshness: { type: 'object' },
-      incidents: { type: 'array' },
-      alternatives: { type: 'array' },
+      incidents: arrayOf({ type: 'object' }),
+      alternatives: arrayOf({ type: 'object' }),
+      segments: arrayOf({ type: 'object' }),
+      explanation: { type: ['object', 'null'] },
       graphVersion: number({ minimum: 0 }),
       incidentVersion: number({ minimum: 0 }),
       calculatedAt: string(),
@@ -357,10 +645,36 @@ export const schemas = Object.freeze({
   sessionSummary: {
     $id: 'accessmap.session-summary.v1',
     type: 'object',
-    required: ['authenticated', 'role'],
+    required: ['schemaVersion', 'authenticated', 'role'],
     properties: {
+      schemaVersion: string({ const: 'session.v1' }),
       authenticated: boolean(),
       role: string({ enum: ['anonymous', 'user', 'moderator', 'admin', 'facility_manager'] })
+    },
+    additionalProperties: false
+  },
+  profileResponse: {
+    $id: 'accessmap.profile.v1',
+    type: 'object',
+    required: ['schemaVersion', 'userId', 'requirements', 'version'],
+    properties: {
+      schemaVersion: string({ const: 'profile.v1' }),
+      userId: string(),
+      requirements: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['featureCode', 'level'],
+          properties: {
+            featureCode: string(),
+            level: string({ enum: ['required', 'preferred', 'avoid'] })
+          },
+          additionalProperties: false
+        }
+      },
+      version: number({ minimum: 0 }),
+      createdAt: string(),
+      updatedAt: string()
     },
     additionalProperties: false
   }
@@ -372,4 +686,95 @@ export function getSchema(name) {
     throw new Error(`Unknown contract schema: ${name}`);
   }
   return schema;
+}
+
+/**
+ * Validate the JSON payloads exchanged at the API boundary without adding a
+ * runtime dependency to the JavaScript-only workspace. This intentionally
+ * implements the small JSON Schema subset used by the shared contracts.
+ */
+export function validateContract(name, value) {
+  const schema = getSchema(name);
+  const errors = [];
+  validateValue(value, schema, '$', errors);
+  return { valid: errors.length === 0, errors };
+}
+
+export function assertValidContract(name, value) {
+  const result = validateContract(name, value);
+  if (!result.valid) {
+    throw new Error(`${name} contract validation failed: ${result.errors.join('; ')}`);
+  }
+  return value;
+}
+
+function validateValue(value, rawSchema, path, errors) {
+  const schema = resolveSchema(rawSchema);
+  if (schema.const !== undefined && value !== schema.const) {
+    errors.push(`${path} must equal ${JSON.stringify(schema.const)}`);
+    return;
+  }
+  if (schema.enum && !schema.enum.includes(value)) {
+    errors.push(`${path} must be one of: ${schema.enum.join(', ')}`);
+    return;
+  }
+
+  if (schema.type && !matchesType(value, schema.type)) {
+    errors.push(`${path} must be ${Array.isArray(schema.type) ? schema.type.join(' or ') : schema.type}`);
+    return;
+  }
+
+  if (typeof value === 'string') {
+    if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${path} is too short`);
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) errors.push(`${path} is too long`);
+  }
+  if (typeof value === 'number') {
+    if (schema.minimum !== undefined && value < schema.minimum) errors.push(`${path} is below the minimum`);
+    if (schema.maximum !== undefined && value > schema.maximum) errors.push(`${path} is above the maximum`);
+  }
+  if (Array.isArray(value)) {
+    if (schema.minItems !== undefined && value.length < schema.minItems) errors.push(`${path} has too few items`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) errors.push(`${path} has too many items`);
+    if (schema.items) value.forEach((item, index) => validateValue(item, schema.items, `${path}[${index}]`, errors));
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+
+  for (const field of schema.required ?? []) {
+    if (!Object.hasOwn(value, field)) errors.push(`${path}.${field} is required`);
+  }
+  for (const [field, fieldSchema] of Object.entries(schema.properties ?? {})) {
+    if (Object.hasOwn(value, field)) validateValue(value[field], fieldSchema, `${path}.${field}`, errors);
+  }
+  if (schema.additionalProperties === false) {
+    const known = new Set(Object.keys(schema.properties ?? {}));
+    for (const field of Object.keys(value)) {
+      if (!known.has(field)) errors.push(`${path}.${field} is not allowed`);
+    }
+  } else if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    const known = new Set(Object.keys(schema.properties ?? {}));
+    for (const [field, fieldValue] of Object.entries(value)) {
+      if (!known.has(field)) validateValue(fieldValue, schema.additionalProperties, `${path}.${field}`, errors);
+    }
+  }
+}
+
+function resolveSchema(schema) {
+  if (schema?.$ref) {
+    const found = Object.values(schemas).find((candidate) => candidate.$id === schema.$ref);
+    if (!found) throw new Error(`Unknown contract reference: ${schema.$ref}`);
+    return found;
+  }
+  return schema ?? {};
+}
+
+function matchesType(value, type) {
+  const types = Array.isArray(type) ? type : [type];
+  return types.some((candidate) => {
+    if (candidate === 'null') return value === null;
+    if (candidate === 'array') return Array.isArray(value);
+    if (candidate === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (candidate === 'number') return typeof value === 'number' && Number.isFinite(value);
+    return typeof value === candidate;
+  });
 }

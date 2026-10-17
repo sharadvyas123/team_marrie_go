@@ -4,7 +4,7 @@
     "longitude": 77.5946
   },
   "destination": {
-    "placeId": "place_sample_community_centre"
+    "placeId": "13000000-0000-0000-0000-000000000001"
   },
   "constraints": {
     "avoidStairs": true,

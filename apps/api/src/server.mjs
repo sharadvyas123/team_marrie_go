@@ -393,6 +393,54 @@ function routeRequestFromQuery(url) {
   };
 }
 
+function serializeRouteResult(result) {
+  const durationSeconds = finiteNumber(result?.durationSeconds ?? result?.duration ?? result?.time);
+  const unknownSegments = Array.isArray(result?.unknownSegments)
+    ? result.unknownSegments
+    : result?.uncertainty?.unknownSegments ?? [];
+  const staleSegments = Array.isArray(result?.staleSegments)
+    ? result.staleSegments
+    : result?.uncertainty?.staleSegments ?? [];
+  const recommendation = typeof result?.recommendation === 'string'
+    ? result.recommendation
+    : result?.explanation?.recommendation
+      ?? (result?.suitable === false
+        ? 'No route satisfies the requested constraints with current information.'
+        : 'This route is a recommendation based on current accessibility information, not a guarantee.');
+  const serialized = {
+    schemaVersion: 'route.v1',
+    id: result?.id,
+    distanceMeters: finiteNumber(result?.distanceMeters ?? result?.distance ?? result?.length),
+    estimatedMinutes: finiteNumber(result?.estimatedMinutes)
+      ?? (durationSeconds === null ? null : Math.ceil(durationSeconds / 60)),
+    uncertainSegments: [...new Set([...unknownSegments, ...staleSegments].map(String))],
+    staleSegments: [...new Set(staleSegments.map(String))],
+    recommendation,
+    constraints: result?.constraints ?? result?.explanation?.constraints ?? {
+      satisfied: [],
+      violated: [],
+      warnings: []
+    },
+    freshness: result?.freshness ?? result?.dataFreshness ?? {
+      state: unknownSegments.length > 0 || staleSegments.length > 0 ? 'uncertain' : 'current'
+    },
+    incidents: result?.incidents ?? result?.activeIncidents ?? [],
+    alternatives: result?.alternatives ?? [],
+    segments: result?.segments ?? [],
+    explanation: result?.explanation ?? null,
+    graphVersion: finiteNumber(result?.graphVersion) ?? 0,
+    incidentVersion: finiteNumber(result?.incidentVersion) ?? 0,
+    calculatedAt: result?.calculatedAt ?? new Date().toISOString(),
+    isAccessibilityGuarantee: false
+  };
+  return Object.fromEntries(Object.entries(serialized).filter(([, value]) => value !== undefined));
+}
+
+function finiteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function createCivicRateLimitPort(limiter) {
   return {
     check({ identity, action }) {
@@ -502,7 +550,7 @@ async function handleRequest(request, response, context) {
   if (method === 'GET' && requestUrl.pathname === '/api/routes') {
     if (!routingService) throw serviceUnavailable('Routing is not configured for this deployment.');
     const result = await routingService.calculate(routeRequestFromQuery(requestUrl));
-    sendJson(response, 200, result, { 'X-Trace-Id': traceId });
+    sendJson(response, 200, serializeRouteResult(result), { 'X-Trace-Id': traceId });
     return;
   }
 
@@ -767,7 +815,7 @@ async function handleRequest(request, response, context) {
       reporterId: session.user.id,
       source: role === 'user' ? 'community' : body.source ?? 'moderator'
     }, requestContext(session, request));
-    sendJson(response, 201, result, { 'X-Trace-Id': traceId });
+    sendJson(response, 201, { schemaVersion: 'incident.v1', ...result }, { 'X-Trace-Id': traceId });
     return;
   }
 
@@ -781,7 +829,7 @@ async function handleRequest(request, response, context) {
       await readJsonBody(request, { maxBytes: 128 * 1024 }),
       requestContext(session, request)
     );
-    sendJson(response, 200, result, { 'X-Trace-Id': traceId });
+    sendJson(response, 200, { schemaVersion: 'incident.v1', ...result }, { 'X-Trace-Id': traceId });
     return;
   }
 
@@ -789,7 +837,10 @@ async function handleRequest(request, response, context) {
     requireActiveSession(session);
     if (method === 'GET') {
       const profile = await ensureRepository(repository).getProfile(session.user.id);
-      sendJson(response, 200, profile ?? { userId: session.user.id, requirements: [], version: 0 }, { 'X-Trace-Id': traceId });
+      sendJson(response, 200, {
+        schemaVersion: 'profile.v1',
+        ...(profile ?? { userId: session.user.id, requirements: [], version: 0 })
+      }, { 'X-Trace-Id': traceId });
       return;
     }
     if (method === 'PATCH') {
@@ -797,7 +848,7 @@ async function handleRequest(request, response, context) {
       const body = await readJsonBody(request);
       const requirements = validateRequirements(body.requirements);
       const saved = await ensureRepository(repository).upsertProfile(session.user.id, requirements);
-      sendJson(response, 200, saved, { 'X-Trace-Id': traceId });
+      sendJson(response, 200, { schemaVersion: 'profile.v1', ...saved }, { 'X-Trace-Id': traceId });
       return;
     }
   }
@@ -822,7 +873,10 @@ async function handleRequest(request, response, context) {
     const page = integerQuery(requestUrl.searchParams.get('page'), 1, { min: 1, max: 10_000 });
     const pageSize = integerQuery(requestUrl.searchParams.get('pageSize'), 20, { min: 1, max: 100 });
     if ([page, pageSize].some((value) => Number.isNaN(value))) throw Object.assign(new Error('Pagination is invalid.'), { status: 422 });
-    sendJson(response, 200, await ensureRepository(observationRepository).listForUser(session.user.id, { page, pageSize }), { 'X-Trace-Id': traceId });
+    sendJson(response, 200, {
+      schemaVersion: 'observation-list.v1',
+      ...(await ensureRepository(observationRepository).listForUser(session.user.id, { page, pageSize }))
+    }, { 'X-Trace-Id': traceId });
     return;
   }
 
@@ -844,7 +898,9 @@ async function handleRequest(request, response, context) {
       const result = await ensureRepository(observationRepository).createObservation(session.user.id, input);
       results.push({ ...result.observation, synced: result.duplicate || requestUrl.pathname.endsWith('/sync'), duplicate: result.duplicate });
     }
-    sendJson(response, requestUrl.pathname.endsWith('/sync') ? 200 : 201, requestUrl.pathname.endsWith('/sync') ? { items: results } : results[0], { 'X-Trace-Id': traceId, ...rate.headers });
+    sendJson(response, requestUrl.pathname.endsWith('/sync') ? 200 : 201, requestUrl.pathname.endsWith('/sync')
+      ? { schemaVersion: 'observation-sync.v1', items: results }
+      : { schemaVersion: 'observation.v1', ...results[0] }, { 'X-Trace-Id': traceId, ...rate.headers });
     return;
   }
 
@@ -935,7 +991,8 @@ async function handleRequest(request, response, context) {
         requireActiveSession(session);
         throw Object.assign(new Error('The observation is not available to this account.'), { status: 403 });
       }
-      sendJson(response, 200, privileged ? privateObservation(observation) : publicObservation(observation), { 'X-Trace-Id': traceId });
+      const serialized = privileged ? privateObservation(observation) : publicObservation(observation);
+      sendJson(response, 200, { schemaVersion: 'observation.v1', ...serialized }, { 'X-Trace-Id': traceId });
       return;
     }
     if (method === 'POST' && ['verify', 'dispute', 'outdated'].includes(segments[3])) {
@@ -1088,6 +1145,7 @@ export class EventHub {
 
 function publicEventPayload(payload) {
   if (!payload || typeof payload !== 'object') return {};
+  const eventType = typeof payload.eventType === 'string' ? payload.eventType : null;
   const allowed = [
     'placeId',
     'incidentId',
@@ -1110,6 +1168,8 @@ function publicEventPayload(payload) {
   ];
   const result = Object.fromEntries(allowed.filter((key) => payload[key] !== undefined)
     .map((key) => [key, payload[key]]));
+  result.schemaVersion = 'stream-event.v1';
+  if (eventType) result.eventType = eventType;
   if (payload.incident && typeof payload.incident === 'object'
     && ['published', 'disputed', 'resolved', 'archived'].includes(payload.incident.status)) {
     result.incident = {

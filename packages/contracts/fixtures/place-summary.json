@@ -1,8 +1,8 @@
 {
-  "id": "place_sample_community_centre",
-  "name": "Sample Community Centre",
-  "category": "community_centre",
-  "address": "Sample Street, Pilot District",
+  "id": "13000000-0000-0000-0000-000000000001",
+  "name": "Sample Central Library",
+  "category": "library",
+  "address": "1 Sample Street",
   "distanceMeters": 420,
   "sampleData": true
 }

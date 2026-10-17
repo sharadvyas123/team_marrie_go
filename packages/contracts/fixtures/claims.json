@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "claims.v1",
+  "items": [
+    {
+      "id": "15000000-0000-0000-0000-000000000001",
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "featureCode": "step_free_entrance",
+      "featureLabel": "Step-free entrance",
+      "status": "community_corroborated",
+      "summaryValue": "yes",
+      "source": "community",
+      "observedAt": "2026-10-03T11:00:00Z",
+      "freshnessState": "fresh",
+      "supportingCount": 2,
+      "disputingCount": 0,
+      "claimsVersion": 1,
+      "calculationVersion": 1
+    }
+  ]
+}

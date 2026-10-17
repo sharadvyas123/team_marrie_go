@@ -1,7 +1,21 @@
 {
+  "schemaVersion": "route.v1",
   "id": "route_sample_no_stairs",
   "distanceMeters": 1250,
   "estimatedMinutes": 18,
   "uncertainSegments": ["segment_sample_2"],
+  "staleSegments": [],
+  "constraints": {
+    "satisfied": ["stairs"],
+    "violated": [],
+    "warnings": []
+  },
+  "freshness": {
+    "state": "uncertain",
+    "latestObservedAt": "2026-10-16T09:00:00Z"
+  },
+  "incidents": [],
+  "alternatives": [],
+  "segments": [],
   "recommendation": "Recommended based on current observations; one segment needs re-verification."
 }
