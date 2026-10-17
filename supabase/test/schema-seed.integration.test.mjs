@@ -8,7 +8,13 @@ import { fileURLToPath } from 'node:url';
 const execFileAsync = promisify(execFile);
 const migrationPaths = [
   fileURLToPath(new URL('../migrations/001_initial_schema.sql', import.meta.url)),
-  fileURLToPath(new URL('../migrations/002_security_and_operations.sql', import.meta.url))
+  fileURLToPath(new URL('../migrations/002_security_and_operations.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/003_outbox_leases.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/004_worker_durability.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/005_s006_authorization.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/006_s006_observation_history.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/007_s008_evidence_pipeline.sql', import.meta.url)),
+  fileURLToPath(new URL('../migrations/008_s009_s010_shared_state.sql', import.meta.url))
 ];
 const seedPath = fileURLToPath(new URL('../seed/001_demo_data.sql', import.meta.url));
 
@@ -42,7 +48,7 @@ DECLARE
   sample_edges integer;
   sample_nodes integer;
   required_rls_tables integer;
-  expected_rls_tables constant integer := 20;
+   expected_rls_tables constant integer := 25;
 BEGIN
   SELECT count(*) INTO sample_places FROM places WHERE is_sample;
   SELECT count(*) INTO sample_observations FROM observations WHERE is_sample;
@@ -96,6 +102,91 @@ BEGIN
     SELECT 1 FROM pg_indexes WHERE indexname = 'access_edges_geometry_gist'
   ) THEN
     RAISE EXCEPTION 'required spatial indexes are missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'outbox_events'
+       AND column_name = 'lease_owner' AND data_type = 'text'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'outbox_events'
+       AND column_name = 'lease_expires_at' AND data_type = 'timestamp with time zone'
+  ) THEN
+    RAISE EXCEPTION 'outbox lease columns are missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+     WHERE conrelid = 'outbox_events'::regclass
+       AND conname = 'outbox_events_lease_state_check'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+     WHERE conrelid = 'outbox_events'::regclass
+       AND conname = 'outbox_events_lease_owner_check'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE indexname = 'outbox_events_lease_idx'
+  ) THEN
+    RAISE EXCEPTION 'outbox lease constraints or index are missing';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM outbox_events
+     WHERE is_sample AND (
+       lease_owner IS NOT NULL
+       OR lease_expires_at IS NOT NULL
+       OR dead_lettered_at IS NOT NULL
+     )
+  ) THEN
+    RAISE EXCEPTION 'seeded outbox events must start without an active lease';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class
+      WHERE relname = 'worker_idempotency'
+        AND relrowsecurity
+  ) THEN
+    RAISE EXCEPTION 'worker idempotency table must have RLS enabled';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class
+      WHERE relname = 'observation_amendments'
+        AND relrowsecurity
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE tablename = 'audit_logs'
+       AND policyname = 'audit_moderation_actor_insert'
+  ) THEN
+    RAISE EXCEPTION 'S-006 history and moderation audit policies are missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'evidence_assets'
+       AND column_name = 'privacy_processed'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE indexname = 'evidence_assets_processing_idx'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE tablename = 'evidence_assets'
+       AND policyname = 'evidence_assets_worker_update'
+  ) THEN
+    RAISE EXCEPTION 'S-008 evidence processing state or worker policy is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class WHERE relname = 'facility_qr_codes' AND relrowsecurity
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_class WHERE relname = 'civic_api_keys' AND relrowsecurity
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_class WHERE relname = 'webhook_deliveries' AND relrowsecurity
+  ) OR NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'barrier_events'
+       AND column_name = 'source_type'
+  ) THEN
+    RAISE EXCEPTION 'S-009/S-010 durable state or incident source metadata is missing';
   END IF;
 
   BEGIN

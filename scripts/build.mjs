@@ -15,9 +15,14 @@ const fixtureSchemaNames = {
   'match-profile.json': 'matchProfile',
   'match-explanation.json': 'matchExplanation',
   'observation.json': 'observation',
+  'moderation-item.json': 'moderationItem',
   'incident.json': 'incident',
   'route-request.json': 'routeRequest',
   'route-result.json': 'routeResult',
+  'evidence-upload-intent.json': 'evidenceUploadIntent',
+  'evidence.json': 'evidence',
+  'facility-response.json': 'facilityResponse',
+  'civic-changes.json': 'civicChanges',
   'session-summary.json': 'sessionSummary'
 };
 

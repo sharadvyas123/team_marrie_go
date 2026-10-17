@@ -1,0 +1,9 @@
+{
+  "id": "moderation_sample_1",
+  "entityType": "observation",
+  "entityId": "observation_sample_1",
+  "reason": "conflict",
+  "priority": "normal",
+  "status": "open",
+  "createdAt": "2026-10-17T10:00:00Z"
+}

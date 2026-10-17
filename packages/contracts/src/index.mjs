@@ -9,7 +9,7 @@ export const schemas = Object.freeze({
     $id: 'accessmap.health.v1',
     type: 'object',
     required: ['schemaVersion', 'service', 'status', 'version'],
-    properties: {
+      properties: {
       schemaVersion: string({ const: 'health.v1' }),
       service: string(),
       status: string({ enum: ['ok', 'degraded'] }),
@@ -175,7 +175,9 @@ export const schemas = Object.freeze({
       clientRequestId: string(),
       duplicate: boolean(),
       synced: boolean(),
-      sampleData: boolean()
+      sampleData: boolean(),
+      evidence: { type: 'array' },
+      amendments: { type: 'array' }
     },
     additionalProperties: false
   },
@@ -208,6 +210,37 @@ export const schemas = Object.freeze({
     properties: { items: { type: 'array' }, pagination: { $ref: 'accessmap.pagination.v1' } },
     additionalProperties: false
   },
+  moderationItem: {
+    $id: 'accessmap.moderation-item.v1',
+    type: 'object',
+    required: ['id', 'entityType', 'entityId', 'reason', 'priority', 'status', 'createdAt'],
+    properties: {
+      id: string(),
+      entityType: string(),
+      entityId: string(),
+      reason: string(),
+      priority: string(),
+      status: string(),
+      assignedTo: string(),
+      createdAt: string(),
+      resolvedAt: string(),
+      resolution: string(),
+      observation: { type: ['object', 'null'] },
+      evidence: { type: ['object', 'null'] }
+    },
+    additionalProperties: false
+  },
+  moderationQueue: {
+    $id: 'accessmap.moderation-queue.v1',
+    type: 'object',
+    required: ['schemaVersion', 'items', 'pagination'],
+    properties: {
+      schemaVersion: string({ const: 'moderation-queue.v1' }),
+      items: { type: 'array' },
+      pagination: { $ref: 'accessmap.pagination.v1' }
+    },
+    additionalProperties: false
+  },
   incident: {
     $id: 'accessmap.incident.v1',
     type: 'object',
@@ -218,10 +251,16 @@ export const schemas = Object.freeze({
       type: string(),
       severity: string({ enum: ['informational', 'warning', 'major', 'critical'] }),
       status: string({ enum: ['reported', 'validated', 'published', 'disputed', 'resolved', 'archived'] }),
+      accessNodeId: string(),
+      accessEdgeId: string(),
+      featureId: string(),
       startsAt: string(),
       reviewAt: string(),
       description: string(),
-      resolvedAt: string()
+      resolvedAt: string(),
+      observedAt: string(),
+      source: string(),
+      affectedScopes: { type: 'array' }
     },
     additionalProperties: false
   },
@@ -232,7 +271,9 @@ export const schemas = Object.freeze({
     properties: {
       origin: { type: 'object' },
       destination: { type: 'object' },
-      constraints: { type: 'object' }
+      constraints: { type: 'object' },
+      alternatives: number({ minimum: 1, maximum: 3 }),
+      timeoutMs: number({ minimum: 100, maximum: 15000 })
     },
     additionalProperties: false
   },
@@ -245,7 +286,71 @@ export const schemas = Object.freeze({
       distanceMeters: number({ minimum: 0 }),
       estimatedMinutes: number({ minimum: 0 }),
       uncertainSegments: { type: 'array' },
-      recommendation: string()
+      recommendation: string(),
+      constraints: { type: 'object' },
+      freshness: { type: 'object' },
+      incidents: { type: 'array' },
+      alternatives: { type: 'array' },
+      graphVersion: number({ minimum: 0 }),
+      incidentVersion: number({ minimum: 0 }),
+      calculatedAt: string(),
+      isAccessibilityGuarantee: boolean()
+    },
+    additionalProperties: false
+  },
+  evidenceUploadIntent: {
+    $id: 'accessmap.evidence-upload-intent.v1',
+    type: 'object',
+    required: ['schemaVersion', 'evidenceId', 'uploadUrl', 'expiresAt', 'mediaType', 'maxBytes', 'status'],
+    properties: {
+      schemaVersion: string({ const: 'evidence-upload-intent.v1' }),
+      evidenceId: string(),
+      uploadUrl: string(),
+      headers: { type: 'object' },
+      expiresAt: string(),
+      mediaType: string(),
+      maxBytes: number({ minimum: 1 }),
+      status: string({ enum: ['awaiting_upload'] })
+    },
+    additionalProperties: false
+  },
+  evidence: {
+    $id: 'accessmap.evidence.v1',
+    type: 'object',
+    required: ['schemaVersion', 'id', 'mediaType', 'url', 'altTextStatus'],
+    properties: {
+      schemaVersion: string({ const: 'evidence.v1' }),
+      id: string(),
+      mediaType: string(),
+      url: string(),
+      altText: string(),
+      altTextStatus: string({ enum: ['pending', 'suggested', 'available', 'not_required'] })
+    },
+    additionalProperties: false
+  },
+  facilityResponse: {
+    $id: 'accessmap.facility-response.v1',
+    type: 'object',
+    required: ['id', 'placeId', 'response', 'source', 'createdAt'],
+    properties: {
+      id: string(),
+      placeId: string(),
+      response: string(),
+      statusValue: string(),
+      source: string({ const: 'facility' }),
+      createdAt: string(),
+      updatedAt: string()
+    },
+    additionalProperties: false
+  },
+  civicChanges: {
+    $id: 'accessmap.civic-changes.v1',
+    type: 'object',
+    required: ['schemaVersion', 'items', 'pagination'],
+    properties: {
+      schemaVersion: string({ const: 'civic-changes.v1' }),
+      items: { type: 'array' },
+      pagination: { $ref: 'accessmap.pagination.v1' }
     },
     additionalProperties: false
   },
