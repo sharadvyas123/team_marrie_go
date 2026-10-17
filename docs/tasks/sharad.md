@@ -27,6 +27,8 @@ Read these documents in order:
 5. [`docs/tasks/Dev.md`](Dev.md)
 6. [`docs/tasks/Dev2.md`](Dev2.md) when working on the transferred API tickets.
 7. [`docs/tasks/Dhariya.md`](Dhariya.md) when working on the transferred backend tickets.
+8. [`docs/FRONTEND_BACKEND_INTEGRATION_PLAN.md`](../FRONTEND_BACKEND_INTEGRATION_PLAN.md)
+9. [`docs/tasks/priyanka.md`](priyanka.md) for the paired frontend work.
 
 The product rule that must not be violated is:
 
@@ -103,6 +105,46 @@ apps/web/public/**
 ```
 
 Do not edit Dev-owned files to “make integration easier”. Change the contract or add an adapter in the owning backend plan instead.
+
+### Focused Sharad/Priyanka frontend integration split
+
+The following split applies specifically to the frontend-backend integration
+described in [`docs/FRONTEND_BACKEND_INTEGRATION_PLAN.md`](../FRONTEND_BACKEND_INTEGRATION_PLAN.md).
+It is a focused delegation of the broader frontend work described in
+`docs/tasks/Dev.md`:
+
+```text
+Sharad: backend readiness, shared contracts, auth/API decisions, database/RLS,
+        API serializers, provider wiring, integration fixtures, and backend checks
+
+Priyanka: apps/web API client/BFF, pages, React state, browser UX, offline queue,
+          evidence UI, SSE client, and frontend/browser checks
+```
+
+For these integration tickets only, Priyanka owns the agreed frontend paths
+listed in `docs/tasks/priyanka.md`. The remaining product UX, design-system, and
+unrelated frontend roadmap stays under the existing Dev plan. Sharad must not
+edit Priyanka's implementation files, and Priyanka must request backend or
+contract changes through Sharad rather than patching server behavior locally.
+
+### Sharad's integration paths
+
+```text
+packages/contracts/**
+packages/domain/**                 # only when a shared API/domain rule changes
+packages/events/**
+packages/validation/**
+apps/api/**                         # endpoint, auth, serializer, and provider work
+apps/api/test/**
+workers/**
+supabase/**
+infra/**
+docs/tasks/sharad.md
+docs/tasks/sharad-handoff.md
+```
+
+Priyanka's frontend paths are listed in `docs/tasks/priyanka.md`; they are not
+Sharad-owned even when a backend response needs to be consumed there.
 
 ### Shared files
 
@@ -227,6 +269,165 @@ Never mark a ticket `VERIFIED` from code existence alone. Its acceptance checks 
 > `docs/tasks/Dhariya.md`. Their ticket IDs, dependencies, and acceptance
 > criteria remain stable. Shared integration files remain with Sharad so the
 > transfer does not conflict with active foundation and API work.
+
+---
+
+# Frontend integration track — Sharad's part
+
+This track is the backend half of the two-person integration split. Priyanka's
+matching frontend tickets and exact web paths are in
+[`docs/tasks/priyanka.md`](priyanka.md). Do not mark a Sharad ticket complete
+until its handoff is usable by Priyanka against a real or explicitly documented
+fixture API.
+
+| ID | Sharad deliverable | Depends on | Priyanka dependency |
+| --- | --- | --- | --- |
+| FI-S1 | Contract, seed-data, and API-shape handshake | Current API and migrations | FI-P1, FI-P2 |
+| FI-S2 | Auth/session contract and profile RLS readiness | FI-S1, S-003 | FI-P3, FI-P4 |
+| FI-S3 | Observation, idempotency, evidence-association, and provider readiness | FI-S1, S-006, S-008 | FI-P4, FI-P5 |
+| FI-S4 | Incidents, routes, SSE contract, and final integration verification | FI-S1, S-007, S-009 | FI-P6 |
+
+## FI-S1 — Contract, seed-data, and API-shape handshake
+
+### Deliverables
+
+- Confirm the real seeded place IDs and feature taxonomy used by the API.
+- Verify anonymous responses for `/health`, `/readyz`, `/api/features`,
+  `/api/categories`, `/api/places`, and `/api/places/:placeId`.
+- Reconcile known contract drift before Priyanka builds adapters:
+  route field names, route recommendation type, incident severity values,
+  schema-version presence, and place/detail response fields.
+- Add or update frontend-safe fixtures for search, detail, match, observation,
+  route, incident, session, and problem responses.
+- Document `ACCESSMAP_API_URL`, local startup commands, migration/seed steps,
+  and the API error contract.
+
+### Acceptance criteria
+
+- The contract package and API serializers describe the same response shapes.
+- No fixture contains credentials, private storage keys, or private user data.
+- Priyanka can run the web against a documented API or fixture mode without
+  guessing field names or IDs.
+
+### Handoff to Priyanka
+
+- Contract/fixture names and version.
+- Canonical seeded place and feature IDs.
+- Exact API base URL and startup commands.
+- Known unavailable providers and expected `problem.v1` responses.
+
+## FI-S2 — Auth/session contract and profile RLS readiness
+
+### Deliverables
+
+- Decide and document the identity-provider/token-issuer boundary. The current
+  API verifies local HMAC `S-003` bearer tokens but does not issue login tokens.
+- Provide a development-only test-user token path that never exposes
+  `AUTH_SECRET` to the browser.
+- Verify `GET /api/session` and the authenticated role/ownership behavior.
+- Test `GET/PATCH /api/me/access-match-profile` against forced RLS using the
+  same database user context as the API.
+- Fix or document the repository context needed for profile reads/writes before
+  Priyanka enables saved profile persistence.
+- Define the BFF auth forwarding contract: cookie/session input, bearer header,
+  expiry behavior, CSRF requirement, and allowed roles.
+
+### Acceptance criteria
+
+- Anonymous requests remain public where intended.
+- A protected request without a valid session returns the documented `401`
+  problem response.
+- A valid user can read and update only their own profile.
+- Session expiry and suspended/inactive users have tested outcomes.
+
+### Handoff to Priyanka
+
+- Session response shape and development login instructions.
+- Required cookie/header behavior and logout/expiry rules.
+- Profile request/response examples and RLS test result.
+
+## FI-S3 — Observation, idempotency, evidence-association, and provider readiness
+
+### Deliverables
+
+- Confirm the observation value mapping and request validation for
+  `POST /api/observations` and `/api/observations/sync`.
+- Verify client-request idempotency, rate-limit behavior, pending/private
+  serialization, and `GET /api/me/observations`.
+- Resolve the current evidence sequencing gap: upload intent requires an
+  existing observation, creation accepts evidence references, and no explicit
+  attach route is currently registered. Add and test either a draft/attach flow
+  or a create-with-upload-intent flow.
+- Confirm whether the target environment wires object storage, public URL
+  generation, evidence processing, and the worker handlers. Return typed
+  unavailable responses when a provider is not configured.
+- Keep public serializers free of contributor identity, moderation notes,
+  private storage keys, and unapproved evidence.
+
+### Acceptance criteria
+
+- Retrying one `clientRequestId` creates one observation.
+- A report is not described as public or claim-affecting before moderation and
+  asynchronous processing complete.
+- Evidence can be completed end-to-end only through a tested API sequence.
+- Provider gaps are visible as actionable `503`/problem responses.
+
+### Handoff to Priyanka
+
+- Observation request/value mapping and response states.
+- Sync batch limit and retry rules.
+- Evidence upload/attach sequence, limits, and processing states.
+- Local provider setup or an explicit reason the evidence UI must remain gated.
+
+## FI-S4 — Incidents, routes, SSE contract, and final verification
+
+### Deliverables
+
+- Publish canonical route request/result fields and reconcile route contract
+  differences before the route UI is built.
+- Verify incident list/create/update behavior, severity/status vocabulary, and
+  public/private field filtering.
+- Document route-provider capability: seeded local graph versus external
+  city-wide routing.
+- Verify SSE `ready` and public event payloads, topic scope, reconnect/refetch
+  expectations, and process-local/multi-replica limitations.
+- Add backend integration tests for the BFF-consumed paths and run the database,
+  outbox, worker, and health checks available in the target environment.
+
+### Acceptance criteria
+
+- Route results explain uncertainty and do not claim universal accessibility.
+- Active incidents are separate from permanent claims.
+- SSE contains only allowlisted public data and is safe to use as a refetch hint.
+- The final handoff lists every remaining provider, deployment, or contract gap.
+
+### Handoff to Priyanka
+
+- Route query examples and canonical result fixture.
+- Incident display/status mapping.
+- SSE event examples and reconnection/refetch instructions.
+- Exact checks run, skipped checks, and known limitations.
+
+### Sharad integration checklists
+
+Before each handoff:
+
+- [ ] Contract/serializer/fixture agree.
+- [ ] Authorization and private-data boundaries are tested.
+- [ ] Error status and `problem.v1` shape are documented.
+- [ ] Provider availability is explicit.
+- [ ] The exact API command and test command are recorded.
+- [ ] No Priyanka-owned frontend file was changed.
+
+At final integration:
+
+- [ ] Priyanka's public directory works against real seeded data.
+- [ ] Authenticated profile/report flows use the agreed session contract.
+- [ ] Observation retry does not duplicate durable data.
+- [ ] Evidence, route, incident, and SSE gaps are either verified or clearly
+      gated behind unavailable states.
+- [ ] `npm run lint`, `npm test`, `npm run build`, health checks, and available
+      service checks have recorded results.
 
 ---
 

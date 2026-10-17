@@ -9,26 +9,86 @@ export const featureCatalog = [
   {
     code: 'step_free_entrance',
     label: 'Step-free entrance',
-    group: 'Movement',
+    group: 'Mobility',
     description: 'An entrance without steps on the approach.'
   },
   {
     code: 'accessible_toilet',
     label: 'Accessible toilet',
-    group: 'Facilities',
+    group: 'Mobility',
     description: 'A toilet with accessible features available to visitors.'
   },
   {
     code: 'quiet_space',
     label: 'Quiet space',
-    group: 'Environment',
+    group: 'Sensory environment',
     description: 'A calmer area for people who need a lower-stimulation space.'
   },
   {
     code: 'ramp_available',
     label: 'Ramp available',
-    group: 'Movement',
+    group: 'Mobility',
     description: 'A ramp that provides an alternative to steps.'
+  },
+  {
+    code: 'working_lift',
+    label: 'Working lift',
+    group: 'Mobility',
+    description: 'A lift is available and reported to be working for the public route.'
+  },
+  {
+    code: 'accessible_parking',
+    label: 'Accessible parking or drop-off',
+    group: 'Mobility',
+    description: 'A suitable accessible parking bay or drop-off point is available.'
+  },
+  {
+    code: 'tactile_paving',
+    label: 'Tactile paving',
+    group: 'Visual access',
+    description: 'Tactile guidance helps people navigate the approach and entrance.'
+  },
+  {
+    code: 'audio_directions',
+    label: 'Audio directions or announcements',
+    group: 'Visual access',
+    description: 'Audio information supports navigation and important updates.'
+  },
+  {
+    code: 'high_contrast_signage',
+    label: 'High-contrast signage',
+    group: 'Visual access',
+    description: 'Signs use clear contrast and readable visual information.'
+  },
+  {
+    code: 'visual_alerts',
+    label: 'Visual alerts and displays',
+    group: 'Hearing and communication',
+    description: 'Important announcements are available through visual alerts or displays.'
+  },
+  {
+    code: 'hearing_loop',
+    label: 'Hearing loop',
+    group: 'Hearing and communication',
+    description: 'A hearing loop or assistive listening system is available where needed.'
+  },
+  {
+    code: 'captioned_information',
+    label: 'Captioned or text assistance',
+    group: 'Hearing and communication',
+    description: 'Videos, service information, or staff support include text alternatives.'
+  },
+  {
+    code: 'clear_signage',
+    label: 'Clear, predictable signage',
+    group: 'Sensory environment',
+    description: 'The route and steps to use the service are clearly signposted.'
+  },
+  {
+    code: 'seating_available',
+    label: 'Seating along the route',
+    group: 'Sensory environment',
+    description: 'There is somewhere to rest during a visit or while waiting.'
   }
 ];
 
@@ -36,6 +96,12 @@ export const samplePlace = {
   ...placeSummary,
   categoryLabel: 'Community centre',
   claims: [claim],
+  activeBarriers: [{
+    featureCode: 'ramp_available',
+    status: 'published',
+    source: 'community_incident',
+    observedAt: incident.startsAt
+  }],
   incidents: [incident],
   observation,
   matchProfile,

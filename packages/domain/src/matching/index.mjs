@@ -331,10 +331,10 @@ function explainRequirement(requirement, claim, barrier) {
 
   if (barrier) {
     return addEvidence(base, {
-      result: requirement.level === 'avoid' ? 'clear' : 'barrier',
+      result: requirement.level === 'avoid' ? 'warning' : 'barrier',
       reason:
         requirement.level === 'avoid'
-          ? 'The avoided condition is not reported by this barrier'
+          ? 'A current barrier or condition conflicts with this avoid preference'
           : 'An active barrier is reported for this feature',
       claimStatus: barrier.status,
       source: barrier.source,
@@ -428,7 +428,8 @@ function summarizeRequired(items) {
     total: requiredItems.length,
     confirmed: requiredItems.filter((item) => item.result === 'confirmed').length,
     knownBarriers: requiredItems.filter((item) => item.result === 'barrier').length,
-    unknown: requiredItems.filter((item) => item.result !== 'confirmed' && item.result !== 'barrier').length
+    partial: requiredItems.filter((item) => item.result === 'partial').length,
+    unknown: requiredItems.filter((item) => item.result === 'unknown').length
   };
 }
 
@@ -437,7 +438,8 @@ function summarizePreferred(items) {
   return {
     total: preferredItems.length,
     confirmed: preferredItems.filter((item) => item.result === 'confirmed').length,
-    unknown: preferredItems.filter((item) => item.result !== 'confirmed').length
+    partial: preferredItems.filter((item) => item.result === 'partial').length,
+    unknown: preferredItems.filter((item) => item.result === 'unknown').length
   };
 }
 
@@ -490,8 +492,8 @@ function isRecognizedValue(value) {
 function createEmptyExplanation({ decision, claimsVersion, calculationVersion }) {
   return {
     decision,
-    required: { total: 0, confirmed: 0, knownBarriers: 0, unknown: 0 },
-    preferred: { total: 0, confirmed: 0, unknown: 0 },
+    required: { total: 0, confirmed: 0, knownBarriers: 0, partial: 0, unknown: 0 },
+    preferred: { total: 0, confirmed: 0, partial: 0, unknown: 0 },
     avoidanceWarnings: [],
     items: [],
     claimsVersion,

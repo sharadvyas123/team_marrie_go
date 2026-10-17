@@ -1,6 +1,8 @@
 {
   "featureCode": "step_free_entrance",
   "status": "recently_observed",
+  "summaryValue": "yes",
+  "freshnessState": "fresh",
   "source": "community_observation",
   "observedAt": "2026-10-01T10:00:00Z",
   "supportingCount": 2,

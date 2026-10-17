@@ -33,8 +33,8 @@ test('a missing profile returns no_profile without exposing profile data', () =>
 
   assert.deepEqual(result, {
     decision: 'no_profile',
-    required: { total: 0, confirmed: 0, knownBarriers: 0, unknown: 0 },
-    preferred: { total: 0, confirmed: 0, unknown: 0 },
+    required: { total: 0, confirmed: 0, knownBarriers: 0, partial: 0, unknown: 0 },
+    preferred: { total: 0, confirmed: 0, partial: 0, unknown: 0 },
     avoidanceWarnings: [],
     items: [],
     claimsVersion: CLAIMS_VERSION,
@@ -56,7 +56,7 @@ test('all required features with recent positive claims are confirmed', () => {
   });
 
   assert.equal(result.decision, 'meets_known_requirements');
-  assert.deepEqual(result.required, { total: 2, confirmed: 2, knownBarriers: 0, unknown: 0 });
+  assert.deepEqual(result.required, { total: 2, confirmed: 2, knownBarriers: 0, partial: 0, unknown: 0 });
   assert.deepEqual(result.items, [
     {
       featureCode: 'accessible_toilet',
@@ -86,7 +86,7 @@ test('a required unknown feature needs more information', () => {
   );
 
   assert.equal(result.decision, 'needs_more_information');
-  assert.deepEqual(result.required, { total: 1, confirmed: 0, knownBarriers: 0, unknown: 1 });
+  assert.deepEqual(result.required, { total: 1, confirmed: 0, knownBarriers: 0, partial: 0, unknown: 1 });
   assert.deepEqual(result.items[0], {
     featureCode: 'working_lift',
     level: 'required',
@@ -108,7 +108,7 @@ test('a recent negative claim is a known required barrier', () => {
   );
 
   assert.equal(result.decision, 'known_barrier');
-  assert.deepEqual(result.required, { total: 1, confirmed: 0, knownBarriers: 1, unknown: 0 });
+  assert.deepEqual(result.required, { total: 1, confirmed: 0, knownBarriers: 1, partial: 0, unknown: 0 });
   assert.equal(result.items[0].result, 'barrier');
   assert.equal(result.items[0].observedAt, '2026-10-11T09:00:00Z');
 });
@@ -123,7 +123,7 @@ test('a preferred unknown feature remains visible without blocking the match', (
   );
 
   assert.equal(result.decision, 'meets_known_requirements');
-  assert.deepEqual(result.preferred, { total: 1, confirmed: 0, unknown: 1 });
+  assert.deepEqual(result.preferred, { total: 1, confirmed: 0, partial: 0, unknown: 1 });
   assert.deepEqual(result.items.find((item) => item.featureCode === 'quiet_space'), {
     featureCode: 'quiet_space',
     level: 'preferred',
@@ -170,10 +170,36 @@ test('stale and conflicted claims stay unknown and cannot confirm requirements',
   );
 
   assert.equal(result.decision, 'needs_more_information');
-  assert.deepEqual(result.required, { total: 2, confirmed: 0, knownBarriers: 0, unknown: 2 });
+  assert.deepEqual(result.required, { total: 2, confirmed: 0, knownBarriers: 0, partial: 0, unknown: 2 });
   assert.equal(result.items[0].result, 'unknown');
   assert.equal(result.items[0].claimStatus, 'recently_observed');
   assert.equal(result.items[1].result, 'unknown');
   assert.equal(result.items[1].claimStatus, 'conflicting_information');
   assert.equal(result.items[1].observedAt, '2026-10-10T10:00:00Z');
+});
+
+test('an active barrier for an avoided feature is an avoidance warning', () => {
+  const result = evaluateMatch({
+    profileSnapshot: profile({ featureCode: 'stairs', level: 'avoid' }),
+    claimsSnapshot: {
+      claimsVersion: CLAIMS_VERSION,
+      claims: [],
+      barriers: [{ featureCode: 'stairs', status: 'published', observedAt: '2026-10-11T09:00:00Z' }]
+    }
+  });
+
+  assert.equal(result.decision, 'meets_known_requirements');
+  assert.equal(result.items[0].result, 'warning');
+  assert.deepEqual(result.avoidanceWarnings, [result.items[0]]);
+  assert.match(result.items[0].reason, /avoid preference/);
+});
+
+test('partial required claims are counted as partial rather than unknown', () => {
+  const result = evaluateMatch(
+    profile({ featureCode: 'step_free_entrance', level: 'required' }),
+    claims(claim('step_free_entrance', { summaryValue: 'partial' }))
+  );
+
+  assert.equal(result.decision, 'partial');
+  assert.deepEqual(result.required, { total: 1, confirmed: 0, knownBarriers: 0, partial: 1, unknown: 0 });
 });

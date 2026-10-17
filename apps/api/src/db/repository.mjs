@@ -51,6 +51,7 @@ function mapIncident(row) {
     accessNodeId: row.access_node_id ?? null,
     accessEdgeId: row.access_edge_id ?? null,
     featureId: row.feature_id ?? null,
+    featureCode: row.feature_code ?? null,
     type: row.incident_type,
     incidentType: row.incident_type,
     severity: fromDatabaseSeverity(row.severity),
@@ -1153,9 +1154,19 @@ export class SqlRepository {
 
   async claimsForMatch(placeId) {
     const claims = await this.listClaims(placeId);
+    const incidents = await this.listIncidents({ placeId, activeOnly: true });
     return {
       claimsVersion: claims.reduce((version, claim) => Math.max(version, claim.claimsVersion), 0),
-      claims
+      claims,
+      barriers: incidents
+        .filter((incident) => incident.featureCode)
+        .map((incident) => ({
+          featureCode: incident.featureCode,
+          status: incident.status,
+          source: incident.source,
+          observedAt: incident.observedAt,
+          active: true
+        }))
     };
   }
 }
@@ -1201,12 +1212,14 @@ function safeVersion(value) {
 
 function incidentSelect() {
   return `SELECT b.id, b.place_id, b.access_node_id, b.access_edge_id, b.feature_id,
-                 b.incident_type, b.severity, b.status, b.description, b.reported_by,
+                  f.code AS feature_code,
+                  b.incident_type, b.severity, b.status, b.description, b.reported_by,
                  b.source_type, b.starts_at, b.review_at, b.expected_expiry_at,
                  b.resolved_at, b.created_at, b.updated_at,
                  ST_Y(ST_Centroid(b.geom::geometry)) AS latitude,
                  ST_X(ST_Centroid(b.geom::geometry)) AS longitude
-            FROM barrier_events b`;
+             FROM barrier_events b
+             LEFT JOIN accessibility_features f ON f.id = b.feature_id`;
 }
 
 function databaseContext(record = {}) {
