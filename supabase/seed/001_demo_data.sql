@@ -45,7 +45,16 @@ VALUES
   ('11000000-0000-0000-0000-000000000006', 'curb_ramp', 'outdoor', 'Curb ramp', 'A usable ramp at the relevant road crossing.', 'boolean', 90, true),
   ('11000000-0000-0000-0000-000000000007', 'path_width', 'outdoor', 'Path width', 'The measured usable width of an access path.', 'measurement', 90, true),
   ('11000000-0000-0000-0000-000000000008', 'quiet_space', 'sensory', 'Quiet space', 'A designated lower-stimulation space.', 'boolean', 180, true),
-  ('11000000-0000-0000-0000-000000000009', 'accessible_stop', 'transport', 'Accessible stop', 'A stop with step-free boarding support.', 'boolean', 30, true);
+  ('11000000-0000-0000-0000-000000000009', 'accessible_stop', 'transport', 'Accessible stop', 'A stop with step-free boarding support.', 'boolean', 30, true),
+  ('11000000-0000-0000-0000-000000000010', 'accessible_parking', 'outdoor', 'Accessible parking or drop-off', 'A suitable accessible parking bay or drop-off point.', 'boolean', 90, true),
+  ('11000000-0000-0000-0000-000000000011', 'tactile_paving', 'outdoor', 'Tactile paving', 'Tactile guidance supports the approach and entrance.', 'boolean', 365, true),
+  ('11000000-0000-0000-0000-000000000012', 'audio_directions', 'communication', 'Audio directions or announcements', 'Audio information supports navigation and important updates.', 'boolean', 180, true),
+  ('11000000-0000-0000-0000-000000000013', 'high_contrast_signage', 'communication', 'High-contrast signage', 'Signs use clear contrast and readable visual information.', 'boolean', 365, true),
+  ('11000000-0000-0000-0000-000000000014', 'visual_alerts', 'communication', 'Visual alerts and displays', 'Important announcements are available through visual alerts or displays.', 'boolean', 180, true),
+  ('11000000-0000-0000-0000-000000000015', 'hearing_loop', 'communication', 'Hearing loop', 'An assistive listening system is available where needed.', 'boolean', 180, true),
+  ('11000000-0000-0000-0000-000000000016', 'captioned_information', 'communication', 'Captioned or text assistance', 'Service information includes text alternatives.', 'boolean', 180, true),
+  ('11000000-0000-0000-0000-000000000017', 'clear_signage', 'cognitive', 'Clear, predictable signage', 'The route and steps to use the service are clearly signposted.', 'boolean', 365, true),
+  ('11000000-0000-0000-0000-000000000018', 'seating_available', 'building', 'Seating along the route', 'There is somewhere to rest during a visit or while waiting.', 'boolean', 180, true);
 
 INSERT INTO users
   (id, auth_subject, email, display_name, role, status, is_sample)

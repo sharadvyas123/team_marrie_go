@@ -1,7 +1,7 @@
 import SiteHeader from '../../components/SiteHeader';
 import SampleDataNotice from '../../components/SampleDataNotice';
 import SearchExperience from '../../components/SearchExperience';
-import { searchPlaces } from '../../lib/fixture-client';
+import { samplePlace, searchPlaces } from '../../lib/fixture-client';
 import Link from 'next/link';
 
 export const metadata = {
@@ -25,7 +25,7 @@ export default async function SearchPage({ searchParams }) {
             <div className="heading-stat"><strong>01</strong><span>sample place<br />available</span></div>
           </div>
           <SampleDataNotice />
-          <SearchExperience initialQuery={query} initialPlaces={places} />
+           <SearchExperience initialQuery={query} initialPlaces={places} initialProfile={samplePlace.matchProfile} />
         </div>
       </main>
       <footer className="site-footer"><div className="shell footer-inner"><div><Link className="footer-brand" href="/">AccessMap</Link><p>Sample directory preview — no live place data connected.</p></div><Link className="text-link" href="/">Back to home <span aria-hidden="true">↗</span></Link></div></footer>

@@ -4,11 +4,13 @@
     "total": 2,
     "confirmed": 1,
     "knownBarriers": 0,
+    "partial": 0,
     "unknown": 1
   },
   "preferred": {
     "total": 1,
     "confirmed": 0,
+    "partial": 0,
     "unknown": 1
   },
   "avoidanceWarnings": [],

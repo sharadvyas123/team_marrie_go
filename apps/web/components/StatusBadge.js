@@ -5,7 +5,15 @@ const toneByStatus = {
   temporarily_unavailable: 'status-warning',
   published: 'status-warning',
   pending: 'status-pending',
-  needs_more_information: 'status-unknown'
+  needs_more_information: 'status-unknown',
+  known_barrier: 'status-warning',
+  partial: 'status-pending',
+  no_profile: 'status-neutral',
+  confirmed: 'status-positive',
+  barrier: 'status-warning',
+  unknown: 'status-unknown',
+  warning: 'status-warning',
+  clear: 'status-positive'
 };
 
 export default function StatusBadge({ status, children }) {
