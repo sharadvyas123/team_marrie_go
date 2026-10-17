@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "incidents.v1",
+  "items": [
+    {
+      "id": "19000000-0000-0000-0000-000000000001",
+      "placeId": "13000000-0000-0000-0000-000000000006",
+      "accessNodeId": null,
+      "accessEdgeId": "18000000-0000-0000-0000-000000000004",
+      "featureId": null,
+      "type": "blocked_path",
+      "severity": "high",
+      "status": "published",
+      "startsAt": "2026-10-12T08:00:00.000Z",
+      "reviewAt": "2026-10-19T08:00:00.000Z",
+      "explanation": "Synthetic construction barrier blocks the stairs segment.",
+      "resolvedAt": null,
+      "observedAt": "2026-10-12T08:00:00.000Z",
+      "source": "community",
+      "affectedScopes": []
+    }
+  ],
+  "pagination": { "page": 1, "pageSize": 20, "total": 1, "hasNext": false }
+}

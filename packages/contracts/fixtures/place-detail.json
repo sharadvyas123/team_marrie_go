@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "place-detail.v1",
+  "id": "13000000-0000-0000-0000-000000000001",
+  "name": "Sample Central Library",
+  "category": "library",
+  "categoryLabel": "Library",
+  "address": "1 Sample Street",
+  "city": "Sample City",
+  "description": "Synthetic sample facility with corroborated entrance and toilet information.",
+  "postalCode": "000001",
+  "latitude": 12.9716,
+  "longitude": 77.5946,
+  "phone": null,
+  "website": null,
+  "openingHours": {},
+  "source": "admin",
+  "status": "active",
+  "sampleData": true,
+  "claims": [
+    {
+      "id": "15000000-0000-0000-0000-000000000001",
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "featureCode": "step_free_entrance",
+      "featureLabel": "Step-free entrance",
+      "status": "community_corroborated",
+      "summaryValue": "yes",
+      "source": "community",
+      "observedAt": "2026-10-03T11:00:00Z",
+      "freshnessState": "fresh",
+      "supportingCount": 2,
+      "disputingCount": 0,
+      "claimsVersion": 1,
+      "calculationVersion": 1
+    }
+  ],
+  "incidents": [],
+  "accessGraph": {
+    "graphVersion": 1,
+    "nodes": [],
+    "edges": []
+  }
+}

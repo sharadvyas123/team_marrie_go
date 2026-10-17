@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "profile.v1",
+  "userId": "12000000-0000-0000-0000-000000000001",
+  "requirements": [
+    { "featureCode": "step_free_entrance", "level": "required" },
+    { "featureCode": "stairs", "level": "avoid" }
+  ],
+  "version": 1,
+  "createdAt": "2026-10-01T09:00:00.000Z",
+  "updatedAt": "2026-10-01T09:00:00.000Z"
+}

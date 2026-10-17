@@ -1,33 +1,37 @@
 import Link from 'next/link';
 import StatusBadge from './StatusBadge';
-import { formatDistance, formatObservedDate, labelForFeature } from '../lib/fixture-client';
-import { decisionLabel } from '../lib/match-client';
+import { formatDistance, formatObservedDate, labelForFeature, sourceLabel, statusLabel, valueLabel } from '../lib/api/normalizers';
 
-export default function PlaceCard({ place, matchExplanation }) {
+function claimText(claim) {
+  return `${labelForFeature(claim.featureCode, claim.featureLabel)} · ${valueLabel(claim.summaryValue)}`;
+}
+
+export default function PlaceCard({ place }) {
+  const claims = place.claimSummary ?? [];
+  const incidents = place.activeIncidents ?? [];
+  const leadClaim = claims[0];
+
   return (
     <article className="place-card">
       <div className="place-card-topline">
-        <span className="place-category"><span className="category-icon" aria-hidden="true">⌂</span>{place.categoryLabel}</span>
-        <span className="sample-chip">Sample</span>
+        <span className="place-category"><span className="category-icon" aria-hidden="true">⌂</span>{place.categoryLabel || place.category}</span>
+        {place.sampleData ? <span className="sample-chip">Sample data</span> : <span className="live-chip">Directory</span>}
       </div>
       <div className="place-card-content">
         <div>
           <h3><Link href={`/places/${place.id}`}>{place.name}</Link></h3>
-          <p className="place-address">{place.address}</p>
+          <p className="place-address">{place.address}{place.city ? ` · ${place.city}` : ''}</p>
         </div>
         <span className="distance-label">{formatDistance(place.distanceMeters)}</span>
       </div>
       <div className="place-card-statuses" aria-label="Accessibility information summary">
-        <StatusBadge status={place.claims[0].status}>Step-free entrance · {place.claims[0].status === 'recently_observed' ? 'confirmed' : 'needs review'}</StatusBadge>
-        <StatusBadge status="not_assessed">Accessible toilet · unknown</StatusBadge>
+        {claims.slice(0, 3).map((claim) => <StatusBadge status={claim.status} key={claim.featureCode}>{claimText(claim)}</StatusBadge>)}
+        {claims.length === 0 ? <StatusBadge status="not_assessed">No features assessed</StatusBadge> : null}
+        {incidents.length > 0 ? <StatusBadge status="published">{incidents.length} public incident{incidents.length === 1 ? '' : 's'}</StatusBadge> : null}
       </div>
-      {matchExplanation ? <div className="place-match-card" aria-label="Personalized accessibility match">
-        <div className="place-match-heading"><span className="place-match-label">For your profile</span><StatusBadge status={matchExplanation.decision}>{decisionLabel(matchExplanation.decision)}</StatusBadge></div>
-        {matchExplanation.decision === 'no_profile' ? <p className="place-match-copy">Add your access needs to see whether this place fits you.</p> : <div className="place-match-counts"><span><strong>{matchExplanation.required.confirmed}</strong>/{matchExplanation.required.total} required confirmed</span><span><strong>{matchExplanation.required.knownBarriers}</strong> barriers</span><span><strong>{matchExplanation.required.unknown}</strong> unknown</span><span><strong>{matchExplanation.preferred.confirmed}</strong> preferred</span>{matchExplanation.avoidanceWarnings.length > 0 ? <span><strong>{matchExplanation.avoidanceWarnings.length}</strong> avoid warning{matchExplanation.avoidanceWarnings.length === 1 ? '' : 's'}</span> : null}</div>}
-      </div> : null}
       <p className="place-card-note">
         <span className="note-icon" aria-hidden="true">↗</span>
-        {labelForFeature(place.claims[0].featureCode)} was observed on {formatObservedDate(place.claims[0].observedAt)} by the community. Other features may not be assessed.
+        {leadClaim ? <>{labelForFeature(leadClaim.featureCode, leadClaim.featureLabel)} is {valueLabel(leadClaim.summaryValue).toLowerCase()} based on {sourceLabel(place.sampleData ? 'sample data' : 'published information')} {leadClaim.observedAt ? `observed on ${formatObservedDate(leadClaim.observedAt)}` : ''}. Other features may not be assessed.</> : <>No feature-level information has been published for this place yet. Unknown is different from unavailable.</>}
       </p>
       <div className="place-card-actions">
         <Link className="text-link" href={`/places/${place.id}`}>View place details <span aria-hidden="true">→</span></Link>

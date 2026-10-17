@@ -20,6 +20,22 @@ This is a scoped delegation for the integration work described in
 [`docs/FRONTEND_BACKEND_INTEGRATION_PLAN.md`](../FRONTEND_BACKEND_INTEGRATION_PLAN.md).
 The broader product frontend roadmap remains documented in `docs/tasks/Dev.md`.
 
+## Current integration checkpoint
+
+FI-P1 and the public-directory portion of FI-P2 are implemented in the current
+workspace. The web app now uses a server-only `ACCESSMAP_API_URL` client and a
+same-origin `/api/accessmap/*` BFF for approved GET requests. `/search`, place
+detail, and the report context route load API data rather than importing the
+fixture client for displayed place data. Search pagination, category/city
+filters, empty results, typed unavailable states, trace references, dynamic
+place IDs, claims, incidents, taxonomy, and access-graph summaries are wired.
+
+The API is currently running at `http://127.0.0.1:3001` without a configured
+PostgreSQL repository in this container, so the live UI correctly shows a
+recoverable `503` directory state. The web production server is available at
+`http://127.0.0.1:3000`. Seeded search/detail verification remains blocked on
+the PostgreSQL/PostGIS migration and seed setup.
+
 ## Read before starting
 
 Read these documents in order:

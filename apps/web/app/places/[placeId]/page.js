@@ -2,23 +2,65 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SiteHeader from '../../../components/SiteHeader';
 import SampleDataNotice from '../../../components/SampleDataNotice';
+import ApiErrorState from '../../../components/ApiErrorState';
 import StatusBadge from '../../../components/StatusBadge';
-import MatchSummary from '../../../components/MatchSummary';
 import ClaimCard from '../../../components/ClaimCard';
-import { featureCatalog, formatObservedDate, getMatchItem, labelForFeature, samplePlace } from '../../../lib/fixture-client';
+import { ApiError } from '../../../lib/api/errors';
+import { getApiJson } from '../../../lib/api/server-client';
+import { normalizePlaceDetail, serializeApiErrorForView, formatObservedDate, sourceLabel, statusLabel } from '../../../lib/api/normalizers';
+
+async function loadPlace(placeId) {
+  const [placeResult, featuresResult] = await Promise.allSettled([
+    getApiJson(`/api/places/${encodeURIComponent(placeId)}`),
+    getApiJson('/api/features')
+  ]);
+  if (placeResult.status === 'rejected') throw placeResult.reason;
+  return {
+    place: normalizePlaceDetail(placeResult.value),
+    features: featuresResult.status === 'fulfilled' ? featuresResult.value?.items ?? [] : []
+  };
+}
 
 export async function generateMetadata({ params }) {
   const { placeId } = await params;
-  return { title: placeId === samplePlace.id ? `${samplePlace.name} · AccessMap` : 'Place · AccessMap' };
+  try {
+    const { place } = await loadPlace(placeId);
+    return { title: `${place.name} · AccessMap`, description: place.description || 'Feature-level place information from AccessMap.' };
+  } catch {
+    return { title: 'Place · AccessMap' };
+  }
+}
+
+function OpeningHours({ openingHours }) {
+  if (!openingHours || Object.keys(openingHours).length === 0) return null;
+  return <div className="place-hours"><h3>Opening hours</h3><dl className="detail-list">{Object.entries(openingHours).map(([day, hours]) => <div key={day}><dt>{day}</dt><dd>{String(hours)}</dd></div>)}</dl></div>;
+}
+
+function IncidentCard({ incident }) {
+  const active = incident.status === 'published' || incident.status === 'disputed';
+  return <article className="incident-card"><div className="incident-icon" aria-hidden="true">!</div><div><div className="incident-heading"><h3>{statusLabel(incident.type)}</h3><StatusBadge status={incident.status}>{statusLabel(incident.status)}</StatusBadge></div><p>{incident.explanation || 'A public incident has been recorded for this place. Check the dates and status before travelling.'}</p><dl className="incident-meta"><div><dt>Severity</dt><dd>{statusLabel(incident.severity)}</dd></div><div><dt>Started</dt><dd>{formatObservedDate(incident.startsAt)}</dd></div><div><dt>Review by</dt><dd>{formatObservedDate(incident.reviewAt)}</dd></div>{incident.source ? <div><dt>Source</dt><dd>{sourceLabel(incident.source)}</dd></div> : null}</dl>{active ? <p className="incident-active-note">This temporary incident is shown separately from permanent feature claims.</p> : null}</div></article>;
 }
 
 export default async function PlacePage({ params }) {
   const { placeId } = await params;
-  if (placeId !== samplePlace.id) notFound();
+  let data;
+  try {
+    data = await loadPlace(placeId);
+  } catch (error) {
+    if (error instanceof ApiError && error.isNotFound) notFound();
+    const viewError = serializeApiErrorForView(error);
+    return <><a className="skip-link" href="#main-content">Skip to main content</a><SiteHeader active="explore" /><main id="main-content" className="app-main"><div className="shell place-error-shell"><ApiErrorState error={viewError} /><Link className="button button-secondary" href="/search">Back to places</Link></div></main></>;
+  }
 
-  const knownClaimCodes = new Set(samplePlace.claims.map((item) => item.featureCode));
-  const unknownFeatures = featureCatalog.filter((feature) => !knownClaimCodes.has(feature.code) && feature.code !== 'ramp_available');
-  const rampStatus = samplePlace.observation;
+  const { place, features } = data;
+  const claimCodes = new Set(place.claims.map((claim) => claim.featureCode));
+  const unknownFeatures = features.filter((feature) => !claimCodes.has(feature.code));
+  const activeIncidents = place.incidents.filter((incident) => incident.status === 'published' || incident.status === 'disputed');
+  const graphNodes = place.accessGraph.nodes?.length ?? 0;
+  const graphEdges = place.accessGraph.edges?.length ?? 0;
+  const assessedCount = place.claims.length;
+  const totalFeatures = features.length || assessedCount;
+  const coverage = totalFeatures > 0 ? Math.min(100, Math.round((assessedCount / totalFeatures) * 100)) : 0;
 
   return (
     <>
@@ -26,25 +68,23 @@ export default async function PlacePage({ params }) {
       <SiteHeader active="explore" />
       <main id="main-content" className="app-main">
         <div className="shell">
-          <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/search">Explore places</Link><span aria-hidden="true">/</span><span aria-current="page">{samplePlace.name}</span></nav>
-          <SampleDataNotice />
+          <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/search">Explore places</Link><span aria-hidden="true">/</span><span aria-current="page">{place.name}</span></nav>
+          {place.sampleData ? <SampleDataNotice /> : null}
 
           <section className="place-hero" aria-labelledby="place-title">
-            <div className="place-hero-copy"><div className="place-card-topline"><span className="place-category"><span className="category-icon" aria-hidden="true">⌂</span>{samplePlace.categoryLabel}</span><span className="sample-chip">Sample place</span></div><h1 id="place-title">{samplePlace.name}</h1><p className="place-address place-address-large">{samplePlace.address}</p><p className="place-hero-description">A fixture place used to show how AccessMap presents feature-level information. Contact details, hours, and coordinates are not included in this sample.</p><div className="place-actions"><Link className="button button-primary" href={`/places/${samplePlace.id}/report`}>Report an issue <span aria-hidden="true">↗</span></Link><Link className="button button-secondary" href="/search">Back to places</Link></div></div>
-            <div className="place-hero-aside"><span className="aside-label">Information coverage</span><strong>1 feature observed</strong><span>Other access details are unknown in this sample.</span><div className="coverage-meter" aria-label="One of four sample feature groups has information"><span /></div><Link className="text-link" href="/profile">Compare with your profile <span aria-hidden="true">→</span></Link></div>
+            <div className="place-hero-copy"><div className="place-card-topline"><span className="place-category"><span className="category-icon" aria-hidden="true">⌂</span>{place.categoryLabel || place.category}</span><StatusBadge status={place.status}>{statusLabel(place.status)}</StatusBadge></div><h1 id="place-title">{place.name}</h1><p className="place-address place-address-large">{place.address}{place.city ? ` · ${place.city}` : ''}</p><p className="place-hero-description">{place.description || 'Feature-level information for this place, with sources and dates shown where available.'}</p><div className="place-contact"><span>{place.phone || 'Phone not provided'}</span>{place.website ? <a href={place.website} rel="noreferrer">Visit website</a> : <span>Website not provided</span>}</div><div className="place-actions"><Link className="button button-primary" href={`/places/${place.id}/report`}>Report an issue <span aria-hidden="true">↗</span></Link><Link className="button button-secondary" href="/search">Back to places</Link></div></div>
+            <div className="place-hero-aside"><span className="aside-label">Information coverage</span><strong>{assessedCount} feature{assessedCount === 1 ? '' : 's'} assessed</strong><span>{unknownFeatures.length > 0 ? `${unknownFeatures.length} other feature${unknownFeatures.length === 1 ? '' : 's'} are not assessed.` : 'Published feature information is shown below.'}</span><div className="coverage-meter" aria-label={`${coverage}% of the available feature catalog has information`}><span style={{ width: `${coverage}%` }} /></div><Link className="text-link" href="/profile">Compare with your profile <span aria-hidden="true">→</span></Link></div>
           </section>
 
           <div className="place-layout">
             <div className="place-main-column">
-              <section className="content-block" aria-labelledby="access-title"><div className="section-heading-row"><div><p className="section-label">Feature-level evidence</p><h2 id="access-title">What is known about access</h2></div><span className="heading-helper">Source and date shown for each claim</span></div><div className="claims-list"><ClaimCard claim={samplePlace.claims[0]} explanationItem={getMatchItem(samplePlace.claims[0].featureCode)} />{unknownFeatures.map((feature) => <details className="claim-card claim-card-unknown" key={feature.code}><summary><span className="claim-summary-main"><span className="feature-icon feature-icon-unknown" aria-hidden="true">?</span><span><strong>{feature.label}</strong><span className="claim-summary-meta">{feature.description}</span></span></span><StatusBadge status="not_assessed">Not assessed</StatusBadge></summary><div className="claim-detail"><p className="unknown-copy">This place has not been assessed for this feature in the sample data. Unknown is different from unavailable — you can contact the facility or contribute an observation.</p><Link className="text-link" href={`/places/${samplePlace.id}/report?feature=${feature.code}`}>Report or update this feature <span aria-hidden="true">→</span></Link></div></details>)}
-                <details className="claim-card claim-card-warning"><summary><span className="claim-summary-main"><span className="feature-icon feature-icon-warning" aria-hidden="true">!</span><span><strong>{labelForFeature(rampStatus.featureCode)}</strong><span className="claim-summary-meta">Current report is awaiting review</span></span></span><StatusBadge status="pending">Pending review</StatusBadge></summary><div className="claim-detail"><dl className="detail-list"><div><dt>Observed</dt><dd>{formatObservedDate(rampStatus.observedAt)}</dd></div><div><dt>Observation</dt><dd>Temporarily unavailable</dd></div><div><dt>Public state</dt><dd>Not server-confirmed in this fixture preview</dd></div></dl></div></details>
-              </div></section>
+              <section className="content-block" aria-labelledby="access-title"><div className="section-heading-row"><div><p className="section-label">Feature-level evidence</p><h2 id="access-title">What is known about access</h2></div><span className="heading-helper">Source and date shown for each claim</span></div><div className="claims-list">{place.claims.map((claim) => <ClaimCard claim={claim} key={claim.featureCode} />)}{unknownFeatures.map((feature) => <details className="claim-card claim-card-unknown" key={feature.code}><summary><span className="claim-summary-main"><span className="feature-icon feature-icon-unknown" aria-hidden="true">?</span><span><strong>{feature.label}</strong><span className="claim-summary-meta">{feature.description}</span></span></span><StatusBadge status="not_assessed">Not assessed</StatusBadge></summary><div className="claim-detail"><p className="unknown-copy">This place has no published claim for this feature. Unknown is different from unavailable, and it is not counted as a confirmed match.</p><Link className="text-link" href={`/places/${place.id}/report?feature=${feature.code}`}>Report or update this feature <span aria-hidden="true">→</span></Link></div></details>)}{place.claims.length === 0 && unknownFeatures.length === 0 ? <p className="unknown-copy">No feature-level information has been published for this place yet.</p> : null}</div></section>
 
-              <section className="content-block incident-block" aria-labelledby="incident-title"><div className="section-heading-row"><div><p className="section-label">AccessPulse</p><h2 id="incident-title">Current barrier</h2></div><StatusBadge status="published">Published</StatusBadge></div><div className="incident-card"><div className="incident-icon" aria-hidden="true">!</div><div><h3>Ramp reported blocked</h3><p>This published sample incident may affect the ramp approach. It does not replace the permanent feature record.</p><dl className="incident-meta"><div><dt>Started</dt><dd>{formatObservedDate(samplePlace.incidents[0].startsAt)}</dd></div><div><dt>Review by</dt><dd>{formatObservedDate(samplePlace.incidents[0].reviewAt)}</dd></div><div><dt>Severity</dt><dd>Major</dd></div></dl></div></div></section>
+              {place.incidents.length > 0 ? <section className="content-block incident-block" aria-labelledby="incident-title"><div className="section-heading-row"><div><p className="section-label">AccessPulse</p><h2 id="incident-title">Public incidents</h2></div>{activeIncidents.length > 0 ? <StatusBadge status="published">{activeIncidents.length} active</StatusBadge> : <StatusBadge status="resolved">No active incidents</StatusBadge>}</div><div className="incident-list">{place.incidents.map((incident) => <IncidentCard incident={incident} key={incident.id} />)}</div></section> : <section className="content-block" aria-labelledby="incident-title"><div className="section-heading-row"><div><p className="section-label">AccessPulse</p><h2 id="incident-title">Public incidents</h2></div><StatusBadge status="clear">None reported</StatusBadge></div><p className="unknown-copy">No public incidents are currently attached to this place. This does not replace feature-level information.</p></section>}
 
-              <section className="content-block" aria-labelledby="activity-title"><div className="section-heading-row"><div><p className="section-label">Community activity</p><h2 id="activity-title">Recent observation</h2></div></div><div className="activity-card"><div className="activity-status"><StatusBadge status="pending">Pending review</StatusBadge><span>Sample observation</span></div><h3>Ramp availability update</h3><p>This observation is waiting for review. It has not been turned into a public claim.</p><span className="activity-date">Observed {formatObservedDate(rampStatus.observedAt)}</span></div></section>
+              <section className="content-block" aria-labelledby="details-title"><div className="section-heading-row"><div><p className="section-label">Place information</p><h2 id="details-title">Visit details</h2></div></div><div className="place-details-grid"><dl className="detail-list"><div><dt>Address</dt><dd>{place.address}{place.city ? `, ${place.city}` : ''}{place.postalCode ? ` ${place.postalCode}` : ''}</dd></div><div><dt>Source</dt><dd>{sourceLabel(place.source)}</dd></div><div><dt>Coordinates</dt><dd>{Number.isFinite(place.latitude) && Number.isFinite(place.longitude) ? `${place.latitude}, ${place.longitude}` : 'Not provided'}</dd></div></dl><OpeningHours openingHours={place.openingHours} /></div></section>
             </div>
-             <aside className="place-side-column"><MatchSummary explanation={samplePlace.matchExplanation} initialProfile={samplePlace.matchProfile} claims={samplePlace.claims} barriers={samplePlace.activeBarriers} /><div className="side-help"><p className="section-label">Have you visited?</p><h2>Help keep this place useful.</h2><p>Share one specific observation. You do not need to complete a full accessibility survey.</p><Link className="button button-secondary button-full" href={`/places/${samplePlace.id}/report`}>Report an issue</Link></div><div className="side-note"><span className="info-icon" aria-hidden="true">i</span><p>AccessMap never converts missing information into a confirmed match or an automatic failure.</p></div></aside>
+            <aside className="place-side-column"><section className="match-summary match-summary-deferred" aria-labelledby="match-summary-title"><div className="match-summary-heading"><div><p className="section-label">Private decision tool</p><h2 id="match-summary-title">Compare with your needs</h2></div><span className="status-badge status-neutral">Coming next</span></div><p className="match-summary-lede">Your access profile stays private. Server-powered matching will compare it with these claims without turning unknown information into a confirmed match.</p><Link className="button button-secondary button-full" href="/profile">Set up my profile <span aria-hidden="true">→</span></Link></section><div className="side-help"><p className="section-label">Have you visited?</p><h2>Help keep this place useful.</h2><p>Share one specific observation. You do not need to complete a full accessibility survey.</p><Link className="button button-secondary button-full" href={`/places/${place.id}/report`}>Report an issue</Link></div><div className="side-note"><span className="info-icon" aria-hidden="true">i</span><p>{graphNodes || graphEdges ? `Access graph: ${graphNodes} node${graphNodes === 1 ? '' : 's'} and ${graphEdges} route segment${graphEdges === 1 ? '' : 's'}.` : 'No access graph has been published for this place yet.'} AccessMap never converts missing information into a confirmed match or an automatic failure.</p></div></aside>
           </div>
         </div>
       </main>

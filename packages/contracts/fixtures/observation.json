@@ -1,7 +1,7 @@
 {
   "id": "observation_sample_blocked_ramp",
-  "placeId": "place_sample_community_centre",
-  "featureCode": "ramp_available",
+  "placeId": "13000000-0000-0000-0000-000000000001",
+  "featureCode": "step_free_entrance",
   "value": "temporarily_unavailable",
   "observedAt": "2026-10-15T09:30:00Z",
   "status": "pending",

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { validateContract } from '../../../../packages/contracts/src/index.mjs';
 import { createLocalSignedToken } from '../../src/auth/index.mjs';
 import { EventHub, createApiServer } from '../../src/server.mjs';
 
@@ -33,7 +34,14 @@ test('shared API registers routes and incident lifecycle services with authentic
     routingService: {
       async calculate(request) {
         calls.push({ type: 'route', request });
-        return { schemaVersion: 'route.v1', id: 'route-1', recommendation: true };
+        return {
+          schemaVersion: 'route.v1',
+          id: 'route-1',
+          distanceMeters: 100,
+          durationSeconds: 120,
+          unknownSegments: [],
+          recommendation: true
+        };
       }
     },
     incidentService: {
@@ -52,7 +60,11 @@ test('shared API registers routes and incident lifecycle services with authentic
 
   const routeResponse = await fetch(`${running.baseUrl}/api/routes?originPlaceId=origin&destinationPlaceId=destination&noStairs=true`);
   assert.equal(routeResponse.status, 200);
-  assert.equal((await routeResponse.json()).id, 'route-1');
+  const routeBody = await routeResponse.json();
+  assert.equal(routeBody.id, 'route-1');
+  assert.equal(routeBody.schemaVersion, 'route.v1');
+  assert.equal(typeof routeBody.recommendation, 'string');
+  assert.deepEqual(validateContract('routeResult', routeBody), { valid: true, errors: [] });
 
   const createResponse = await fetch(`${running.baseUrl}/api/incidents`, {
     method: 'POST',
@@ -128,4 +140,6 @@ test('outbox-to-SSE event hub allowlists public fields', () => {
   assert.equal(writes.length, 1);
   assert.doesNotMatch(writes[0], /private-user|private@example|moderatorNotes/);
   assert.match(writes[0], /place-1/);
+  assert.match(writes[0], /stream-event.v1/);
+  assert.match(writes[0], /"eventType":"barrier.created"/);
 });

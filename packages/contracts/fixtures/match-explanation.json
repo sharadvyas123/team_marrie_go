@@ -21,6 +21,22 @@
       "result": "unknown",
       "reason": "No recent supporting claim",
       "claimStatus": "not_assessed"
+    },
+    {
+      "featureCode": "quiet_space",
+      "level": "preferred",
+      "result": "unknown",
+      "reason": "No recent supporting claim",
+      "claimStatus": "not_assessed"
+    },
+    {
+      "featureCode": "step_free_entrance",
+      "level": "required",
+      "result": "confirmed",
+      "reason": "Recent supporting claim confirms this feature",
+      "claimStatus": "recently_observed",
+      "source": "community_observation",
+      "observedAt": "2026-10-01T10:00:00Z"
     }
   ],
   "claimsVersion": 1,

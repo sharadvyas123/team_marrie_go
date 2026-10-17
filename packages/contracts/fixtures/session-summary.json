@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "session.v1",
   "authenticated": false,
   "role": "anonymous"
 }

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "stream-event.v1",
+  "eventType": "incident.updated",
+  "placeId": "13000000-0000-0000-0000-000000000006",
+  "incidentId": "19000000-0000-0000-0000-000000000001",
+  "type": "blocked_path",
+  "severity": "high",
+  "source": "community",
+  "startsAt": "2026-10-12T08:00:00.000Z",
+  "reviewAt": "2026-10-19T08:00:00.000Z",
+  "status": "published",
+  "occurredAt": "2026-10-17T10:00:00.000Z"
+}

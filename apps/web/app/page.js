@@ -79,7 +79,7 @@ export default function HomePage() {
               <p className="hero-copy">AccessMap helps you discover public places with the access details that matter to you — clear, dated, and honest about what is still unknown.</p>
               <div className="hero-actions">
                 <Link className="button button-primary" href="/search">Explore accessible places <span aria-hidden="true">→</span></Link>
-                <Link className="button button-secondary" href="/places/place_sample_community_centre/report">Report a barrier <span aria-hidden="true">↗</span></Link>
+                <Link className="button button-secondary" href="/places/13000000-0000-0000-0000-000000000001/report">Report a barrier <span aria-hidden="true">↗</span></Link>
               </div>
               <p className="hero-note"><span className="note-check" aria-hidden="true">✓</span> No diagnosis required · preferences stay private</p>
             </div>
@@ -166,7 +166,7 @@ export default function HomePage() {
         <section className="cta-section" aria-labelledby="cta-title">
           <div className="shell cta-card">
             <div><p className="section-label">Start with what is known</p><h2 id="cta-title">A better-informed visit starts here.</h2><p>Explore the sample directory or add an observation from your own experience.</p></div>
-            <div className="cta-actions"><Link className="button button-primary" href="/search">Explore places <span aria-hidden="true">→</span></Link><Link className="button button-light" href="/places/place_sample_community_centre/report">Report a barrier</Link></div>
+             <div className="cta-actions"><Link className="button button-primary" href="/search">Explore places <span aria-hidden="true">→</span></Link><Link className="button button-light" href="/places/13000000-0000-0000-0000-000000000001/report">Report a barrier</Link></div>
           </div>
         </section>
       </main>

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "observation-sync.v1",
+  "items": [
+    {
+      "id": "14000000-0000-0000-0000-000000000099",
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "featureCode": "step_free_entrance",
+      "value": "yes",
+      "details": "The main entrance has a level approach.",
+      "measuredValue": null,
+      "observedAt": "2026-10-17T09:00:00.000Z",
+      "submittedAt": "2026-10-17T09:01:00.000Z",
+      "status": "pending",
+      "visibility": "public",
+      "clientRequestId": "sample-request-0099",
+      "duplicate": true,
+      "synced": true,
+      "sampleData": true,
+      "evidence": [],
+      "amendments": []
+    }
+  ]
+}

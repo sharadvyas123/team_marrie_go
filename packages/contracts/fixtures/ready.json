@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "ready.v1",
+  "status": "ok",
+  "checks": {
+    "process": "ok",
+    "database": "ok",
+    "cache": "ok"
+  }
+}

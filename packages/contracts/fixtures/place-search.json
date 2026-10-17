@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "place-search.v1",
+  "items": [
+    {
+      "id": "13000000-0000-0000-0000-000000000001",
+      "name": "Sample Central Library",
+      "category": "library",
+      "categoryLabel": "Library",
+      "address": "1 Sample Street",
+      "city": "Sample City",
+      "description": "Synthetic sample facility with corroborated entrance and toilet information.",
+      "latitude": 12.9716,
+      "longitude": 77.5946,
+      "distanceMeters": 420,
+      "sampleData": true,
+      "claimSummary": [
+        { "featureCode": "step_free_entrance", "status": "community_corroborated", "summaryValue": "yes", "observedAt": "2026-10-03T11:00:00Z", "freshnessState": "fresh" },
+        { "featureCode": "accessible_toilet", "status": "community_reported", "summaryValue": "yes", "observedAt": "2026-10-02T10:00:00Z", "freshnessState": "fresh" }
+      ],
+      "activeIncidents": []
+    }
+  ],
+  "pagination": { "page": 1, "pageSize": 20, "total": 1, "hasNext": false }
+}

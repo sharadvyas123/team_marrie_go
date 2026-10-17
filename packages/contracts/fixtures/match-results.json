@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "match-results.v1",
+  "items": [
+    {
+      "placeId": "13000000-0000-0000-0000-000000000001",
+      "decision": "meets_known_requirements",
+      "required": { "total": 1, "confirmed": 1, "knownBarriers": 0, "partial": 0, "unknown": 0 },
+      "preferred": { "total": 0, "confirmed": 0, "partial": 0, "unknown": 0 },
+      "avoidanceWarnings": [],
+      "items": [
+        {
+          "featureCode": "step_free_entrance",
+          "level": "required",
+          "result": "confirmed",
+          "reason": "Recent supporting claim confirms this feature",
+          "claimStatus": "community_corroborated",
+          "source": "community",
+          "observedAt": "2026-10-03T11:00:00Z"
+        }
+      ],
+      "claimsVersion": 1,
+      "calculationVersion": 1
+    }
+  ]
+}
